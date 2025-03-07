@@ -4,9 +4,20 @@ import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 
 import java.math.BigInteger;
 
+/**
+ * Convert number x from base a to base b<br>
+ * The supported signature of floor function is<br>
+ * (STRING, INTEGER, INTEGER) -> STRING<br>
+ * (INTEGER, INTEGER, INTEGER) -> STRING
+ */
 public class ConvFunction implements UserDefinedFunction {
     @Override
     public Object eval(Object... args) {
+        if (args.length != 3) {
+            throw new IllegalArgumentException(
+                    String.format("CONV function requires exactly three arguments, but got %d", args.length));
+        }
+
         Object number = args[0];
         Object fromBase = args[1];
         Object toBase = args[2];
