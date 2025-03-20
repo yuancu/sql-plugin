@@ -67,6 +67,7 @@ spotless {
         target fileTree('.') {
             include '**/*.java'
             exclude '**/build/**', '**/build-*/**'
+            exclude 'src/main/gen/**'
         }
         importOrder()
 //        licenseHeader("/*\n" +
