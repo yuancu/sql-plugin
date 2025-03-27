@@ -1352,4 +1352,23 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             199701, 1209, 1200, 120907, 120000, 12090742, 12000000, 907, 907, 90742, 90742, 742,
             742));
   }
+
+  @Test
+  public void testMicrosecond() {
+    JSONObject actual =
+        executeQuery(
+            String.format(
+                "source=%s | head 1 |  eval m1 = MICROSECOND(date_time), m2 = MICROSECOND(time), m3"
+                    + " = MICROSECOND(date), m4 = MICROSECOND('13:45:22.123456789'), m5 ="
+                    + " MICROSECOND('2012-09-13 13:45:22.123456789')| fields m1, m2, m3, m4, m5",
+                TEST_INDEX_DATE_FORMATS));
+    verifySchema(
+        actual,
+        schema("m1", "integer"),
+        schema("m2", "integer"),
+        schema("m3", "integer"),
+        schema("m4", "integer"),
+        schema("m5", "integer"));
+    verifyDataRows(actual, rows(0, 0, 0, 123456, 123456));
+  }
 }

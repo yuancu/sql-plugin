@@ -681,7 +681,6 @@ public class calciteBuiltinFunctionsNullIT extends CalcitePPLIntegTestCase {
         verifyDataRows(actual, rows(null, null));
     }
 
-    @Ignore
     @Test
     public void testMicrosecondNull() {
         JSONObject actual =
@@ -1000,4 +999,6 @@ public class calciteBuiltinFunctionsNullIT extends CalcitePPLIntegTestCase {
                 schema("y2", "integer"));
         verifyDataRows(actual, rows(null, null));
     }
+
+
 }

@@ -56,6 +56,7 @@ import org.opensearch.sql.calcite.udf.datetimeUDF.FromUnixTimestampFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.GetFormatFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.MakeDateFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.MakeTimeFunction;
+import org.opensearch.sql.calcite.udf.datetimeUDF.MicrosecondFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.MinuteOfDay;
 import org.opensearch.sql.calcite.udf.datetimeUDF.PeriodAddFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.PeriodDiffFunction;
@@ -85,9 +86,9 @@ import org.opensearch.sql.calcite.udf.mathUDF.ConvFunction;
 import org.opensearch.sql.calcite.udf.mathUDF.EulerFunction;
 import org.opensearch.sql.calcite.udf.mathUDF.ModFunction;
 import org.opensearch.sql.calcite.udf.mathUDF.SqrtFunction;
-import org.opensearch.sql.calcite.utils.datetime.DateTimeParser;
 import org.opensearch.sql.calcite.udf.textUDF.LocateFunction;
 import org.opensearch.sql.calcite.udf.textUDF.ReplaceFunction;
+import org.opensearch.sql.calcite.utils.datetime.DateTimeParser;
 
 public interface BuiltinFunctionUtils {
 
@@ -159,10 +160,7 @@ public interface BuiltinFunctionUtils {
       case "REPLACE":
         return TransferUserDefinedFunction(ReplaceFunction.class, "REPLACE", ReturnTypes.CHAR);
       case "LOCATE":
-        return TransferUserDefinedFunction(
-            LocateFunction.class,
-            "LOCATE",
-                createNullableReturnType(SqlTypeName.INTEGER));
+        return TransferUserDefinedFunction(LocateFunction.class, "LOCATE", ReturnTypes.INTEGER);
       case "UPPER":
         return SqlStdOperatorTable.UPPER;
         // Built-in Math Functions
@@ -371,6 +369,9 @@ public interface BuiltinFunctionUtils {
           "SECOND",
           "SECOND_OF_MINUTE":
         return SqlLibraryOperators.DATE_PART;
+      case "MICROSECOND":
+        return TransferUserDefinedFunction(
+            MicrosecondFunction.class, "MICROSECOND", ReturnTypes.INTEGER);
       case "YEARWEEK":
         return TransferUserDefinedFunction(YearWeekFunction.class, "YEARWEEK", ReturnTypes.INTEGER);
       case "FROM_UNIXTIME":
@@ -611,7 +612,9 @@ public interface BuiltinFunctionUtils {
         subTimeArgs.add(context.rexBuilder.makeLiteral(false));
         return subTimeArgs;
       case "TIME":
-        return ImmutableList.of(argList.getFirst(), context.rexBuilder.makeFlag(argList.getFirst().getType().getSqlTypeName()));
+        return ImmutableList.of(
+            argList.getFirst(),
+            context.rexBuilder.makeFlag(argList.getFirst().getType().getSqlTypeName()));
       case "DATE_FORMAT", "FORMAT_TIMESTAMP":
         RexNode dateExpr = argList.get(0);
         RexNode dateFormatPatternExpr = argList.get(1);
@@ -658,7 +661,7 @@ public interface BuiltinFunctionUtils {
             argList.getFirst(),
             woyMode,
             context.rexBuilder.makeFlag(argList.getFirst().getType().getSqlTypeName()));
-      case "MINUTE_OF_DAY":
+      case "MINUTE_OF_DAY", "MICROSECOND":
         // Convert STRING/TIME/TIMESTAMP to TIMESTAMP
         return ImmutableList.of(
             argList.getFirst(),
@@ -718,7 +721,8 @@ public interface BuiltinFunctionUtils {
               "MINUTE_OF_HOUR",
               "QUARTER",
               "SECOND",
-              "SECOND_OF_MINUTE" -> rexBuilder.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
+              "SECOND_OF_MINUTE",
+              "MICROSECOND" -> rexBuilder.getTypeFactory().createSqlType(SqlTypeName.INTEGER);
           default -> rexBuilder.deriveReturnType(operator, exprs);
         };
     // Make all return types nullable
