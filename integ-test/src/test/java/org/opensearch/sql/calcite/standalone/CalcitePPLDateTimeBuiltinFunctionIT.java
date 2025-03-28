@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import org.hamcrest.Matchers;
 import org.json.JSONObject;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.opensearch.client.Request;
 import org.opensearch.sql.data.model.ExprDateValue;
@@ -54,20 +53,20 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
   }
 
   void verifyDateFormat(String date, String type, String format, String formatted)
-          throws IOException {
+      throws IOException {
     JSONObject result =
-            executeQuery(
-                    String.format(
-                            "source=%s | eval f = date_format(%s('%s'), '%s') | fields f",
-                            TEST_INDEX_DATE, type, date, format));
+        executeQuery(
+            String.format(
+                "source=%s | eval f = date_format(%s('%s'), '%s') | fields f",
+                TEST_INDEX_DATE, type, date, format));
     verifySchema(result, schema("f", null, "string"));
     verifySome(result.getJSONArray("datarows"), rows(formatted));
 
     result =
-            executeQuery(
-                    String.format(
-                            "source=%s | eval f = date_format('%s', '%s') | fields f",
-                            TEST_INDEX_DATE, date, format));
+        executeQuery(
+            String.format(
+                "source=%s | eval f = date_format('%s', '%s') | fields f",
+                TEST_INDEX_DATE, date, format));
     verifySchema(result, schema("f", null, "string"));
     verifySome(result.getJSONArray("datarows"), rows(formatted));
   }
@@ -79,20 +78,26 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             String.format(
                 "source=%s | eval `DATE('2020-08-26')` = DATE('2020-08-26') | eval"
                     + " `DATE(TIMESTAMP('2020-08-26 13:49:00'))` = DATE(TIMESTAMP('2020-08-26"
-                    + " 13:49:00')) | eval `DATE('2020-08-26 13:49')` = DATE('2020-08-26 13:49') |"
-                    + " fields `DATE('2020-08-26')`, `DATE(TIMESTAMP('2020-08-26 13:49:00'))`,"
-                    + " `DATE('2020-08-26 13:49')` | head 1",
-                TEST_INDEX_STATE_COUNTRY));
+                    + " 13:49:00')) | eval `DATE('2020-08-26 13:49')` = DATE('2020-08-26 13:49') "
+                    + "| eval d = DATE(strict_date_time)"
+                    + "| fields `DATE('2020-08-26')`, `DATE(TIMESTAMP('2020-08-26 13:49:00'))`,"
+                    + " `DATE('2020-08-26 13:49')`, d | head 1",
+                TEST_INDEX_DATE_FORMATS));
 
     verifySchema(
         actual,
         schema("DATE('2020-08-26')", "date"),
         schema("DATE(TIMESTAMP('2020-08-26 13:49:00'))", "date"),
-        schema("DATE('2020-08-26 13:49')", "date"));
+        schema("DATE('2020-08-26 13:49')", "date"),
+        schema("d", "date"));
 
     verifyDataRows(
         actual,
-        rows(Date.valueOf("2020-08-26"), Date.valueOf("2020-08-26"), Date.valueOf("2020-08-26")));
+        rows(
+            Date.valueOf("2020-08-26"),
+            Date.valueOf("2020-08-26"),
+            Date.valueOf("2020-08-26"),
+            Date.valueOf("1984-04-12")));
   }
 
   @Test
@@ -100,9 +105,9 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s | eval `TIMESTAMP('2020-08-26 13:49:00')` = TIMESTAMP('2020-08-26"
-                    + " 13:49:00')| eval `TIMESTAMP(DATE('2020-08-26 13:49:00'))` ="
-                    + " TIMESTAMP(DATE('2020-08-26 13:49:00'))| eval"
+                "source=%s | head 1 | eval `TIMESTAMP('2020-08-26 13:49:00')` ="
+                    + " TIMESTAMP('2020-08-26 13:49:00')| eval `TIMESTAMP(DATE('2020-08-26"
+                    + " 13:49:00'))` = TIMESTAMP(DATE('2020-08-26 13:49:00'))| eval"
                     + " `TIMESTAMP(TIMESTAMP('2020-08-26 13:49:00'))` ="
                     + " TIMESTAMP(TIMESTAMP('2020-08-26 13:49:00'))| eval"
                     + " `TIMESTAMP(TIME('2020-08-26 13:49:00'))` = TIMESTAMP(TIME('2020-08-26"
@@ -113,13 +118,14 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                     + " `TIMESTAMP('2020-08-26 13:49:00', DATE(2020-08-26 00:10:10))` ="
                     + " TIMESTAMP('2020-08-26 13:49:00', DATE('2020-08-26 00:10:10'))| eval"
                     + " `TIMESTAMP('2020-08-26 13:49:00', TIME(00:10:10))` = TIMESTAMP('2020-08-26"
-                    + " 13:49:00', TIME('00:10:10'))| fields `TIMESTAMP('2020-08-26 13:49:00')`,"
+                    + " 13:49:00', TIME('00:10:10')), ts = TIMESTAMP('2009-12-12"
+                    + " 13:40:04.123456789')| fields `TIMESTAMP('2020-08-26 13:49:00')`,"
                     + " `TIMESTAMP(DATE('2020-08-26 13:49:00'))`, `TIMESTAMP(TIMESTAMP('2020-08-26"
                     + " 13:49:00'))`,  `TIMESTAMP(TIME('2020-08-26 13:49:00'))`,"
                     + " `TIMESTAMP('2020-08-26 13:49:00', 2020-08-26 00:10:10)`,"
                     + " `TIMESTAMP('2020-08-26 13:49:00', TIMESTAMP(2020-08-26 00:10:10))`,"
                     + " `TIMESTAMP('2020-08-26 13:49:00', DATE(2020-08-26 00:10:10))`,"
-                    + " `TIMESTAMP('2020-08-26 13:49:00', TIME(00:10:10))`| head 1",
+                    + " `TIMESTAMP('2020-08-26 13:49:00', TIME(00:10:10))`, ts",
                 TEST_INDEX_STATE_COUNTRY));
 
     verifySchema(
@@ -131,7 +137,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("TIMESTAMP('2020-08-26 13:49:00', 2020-08-26 00:10:10)", "timestamp"),
         schema("TIMESTAMP('2020-08-26 13:49:00', TIMESTAMP(2020-08-26 00:10:10))", "timestamp"),
         schema("TIMESTAMP('2020-08-26 13:49:00', DATE(2020-08-26 00:10:10))", "timestamp"),
-        schema("TIMESTAMP('2020-08-26 13:49:00', TIME(00:10:10))", "timestamp"));
+        schema("TIMESTAMP('2020-08-26 13:49:00', TIME(00:10:10))", "timestamp"),
+        schema("ts", "timestamp"));
 
     verifyDataRows(
         actual,
@@ -143,7 +150,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             "2020-08-26 13:59:10",
             "2020-08-26 13:59:10",
             "2020-08-26 13:49:00",
-            "2020-08-26 13:59:10"));
+            "2020-08-26 13:59:10",
+            "2009-12-12 13:40:04.123456789"));
   }
 
   @Test
@@ -157,10 +165,11 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                     + " `TIME(TIME('13:49:00'))` = TIME(TIME('13:49:00'))| eval"
                     + " `TIME(TIMESTAMP('2024-08-06 13:49:00'))` = TIME(TIMESTAMP('2024-08-06"
                     + " 13:49:00'))| eval `TIME(DATE('2024-08-06 13:49:00'))` ="
-                    + " TIME(DATE('2024-08-06 13:49:00'))| fields `TIME('2020-08-26 13:49:00')`,"
+                    + " TIME(DATE('2024-08-06 13:49:00')), t = TIME('13:49:00.123456789')"
+                    + " | fields `TIME('2020-08-26 13:49:00')`,"
                     + " `TIME('2020-08-26 13:49')`, `TIME('13:49')`,  `TIME('13:49:00.123')`,"
                     + " `TIME(TIME('13:49:00'))`, `TIME(TIMESTAMP('2024-08-06 13:49:00'))`,"
-                    + " `TIME(DATE('2024-08-06 13:49:00'))`| head 1",
+                    + " `TIME(DATE('2024-08-06 13:49:00'))`, t | head 1",
                 TEST_INDEX_STATE_COUNTRY));
 
     verifySchema(
@@ -171,7 +180,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("TIME('13:49:00.123')", "time"),
         schema("TIME(TIME('13:49:00'))", "time"),
         schema("TIME(TIMESTAMP('2024-08-06 13:49:00'))", "time"),
-        schema("TIME(DATE('2024-08-06 13:49:00'))", "time"));
+        schema("TIME(DATE('2024-08-06 13:49:00'))", "time"),
+        schema("t", "time"));
 
     verifyDataRows(
         actual,
@@ -182,7 +192,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             "13:49:00.123",
             "13:49:00",
             "13:49:00",
-            "00:00:00"));
+            "00:00:00",
+            "13:49:00.123456789"));
   }
 
   @Test
@@ -204,30 +215,27 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s "
-                    + "| where YEAR(strict_date_optional_time) < 2000"
-                    + "| eval demo = str_to_date(\"01,5,2013\", \"%%d,%%m,%%Y\")"
-                    + "| where str_to_date(\"01,5,2013\", \"%%d,%%m,%%Y\")='2013-05-01 00:00:00'"
-                    + "| fields demo | head 1",
+                "source=%s | where YEAR(strict_date_optional_time) < 2000| eval demo ="
+                    + " str_to_date(\"01,5,2013\", \"%%d,%%m,%%Y\")| where"
+                    + " str_to_date(\"01,5,2013\", \"%%d,%%m,%%Y\")='2013-05-01 00:00:00'| eval s2d"
+                    + " =  STR_TO_DATE('2010-09-10 12:56:45.123456', '%%Y-%%m-%%d %%T.%%f')| fields"
+                    + " demo, s2d | head 1",
                 TEST_INDEX_DATE_FORMATS));
-    verifySchema(actual, schema("demo", "timestamp"));
-    verifyDataRows(actual, rows("2013-05-01 00:00:00"));
+    verifySchema(actual, schema("demo", "timestamp"), schema("s2d", "timestamp"));
+    verifyDataRows(actual, rows("2013-05-01 00:00:00", "2010-09-10 12:56:45"));
   }
-
 
   @Test
   public void testTimeFormat() {
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s "
-                    + "| where YEAR(strict_date_optional_time) < 2000"
-                    + "| eval timestamp=TIME_FORMAT(strict_date_optional_time, '%%h') "
-                    + "| eval time=TIME_FORMAT(time, '%%h')"
-                    + "| eval date=TIME_FORMAT(date, '%%h')"
-                    + "| eval string_value=TIME_FORMAT('1998-01-31 13:14:15.012345','%%h %%i' ) "
-                    + "| where TIME_FORMAT(strict_date_optional_time, '%%h')='09'"
-                    + "| fields timestamp, time, date, string_value | head 1",
+                "source=%s | where YEAR(strict_date_optional_time) < 2000| eval"
+                    + " timestamp=TIME_FORMAT(strict_date_optional_time, '%%h') | eval"
+                    + " time=TIME_FORMAT(time, '%%h')| eval date=TIME_FORMAT(date, '%%h')| eval"
+                    + " string_value=TIME_FORMAT('1998-01-31 13:14:15.012345','%%h %%i %%f' ) |"
+                    + " where TIME_FORMAT(strict_date_optional_time, '%%h')='09'| fields timestamp,"
+                    + " time, date, string_value | head 1",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -235,7 +243,7 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("time", "string"),
         schema("date", "string"),
         schema("string_value", "string"));
-    verifyDataRows(actual, rows("09", "09", "12", "01 14"));
+    verifyDataRows(actual, rows("09", "09", "12", "01 14 012345"));
   }
 
   @Test
@@ -360,7 +368,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                 "source=%s "
                     + "| eval from_unix = from_unixtime(1220249547)"
                     + "| eval to_unix = unix_timestamp(from_unix)"
-                    //+ "| where unix_timestamp(from_unixtime(1700000001)) > 1700000000 " // don't do
+                    // + "| where unix_timestamp(from_unixtime(1700000001)) > 1700000000 " // don't
+                    // do
                     // filter
                     + "| fields from_unix, to_unix | head 1",
                 TEST_INDEX_DATE_FORMATS));
@@ -571,15 +580,14 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     return result.format(formatter);
   }
 
-
   @Test
   public void testAddDateAndSubDateWithConditionsAndRename() {
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s | eval lower = SUBDATE(date_time, 3), upper = ADDDATE(date, 1), ts ="
-                    + " ADDDATE(date, INTERVAL 1 DAY) | where strict_date < upper | rename"
-                    + " strict_date as d | head 1 | fields lower, upper, d, ts",
+                "source=%s | head 1 | eval lower = SUBDATE(strict_date_optional_time_nanos, 3),"
+                    + " upper = ADDDATE(date, 1), ts = ADDDATE(date, INTERVAL 1 DAY) | where"
+                    + " strict_date < upper | rename strict_date as d | fields lower, upper, d, ts",
                 TEST_INDEX_DATE_FORMATS));
 
     verifySchema(
@@ -589,7 +597,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("d", "date"),
         schema("ts", "timestamp"));
     verifyDataRows(
-        actual, rows("1984-04-09 09:07:42", "1984-04-13", "1984-04-12", "1984-04-13 00:00:00"));
+        actual,
+        rows("1984-04-09 09:07:42.000123456", "1984-04-13", "1984-04-12", "1984-04-13 00:00:00"));
   }
 
   @Test
@@ -682,7 +691,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                     + "| eval t3 = SUBTIME(date, time)"
                     + "| eval t4 = ADDTIME(time, time)"
                     + "| eval t5 = SUBTIME(date_time, date_time)"
-                    + "| fields t1, t2, t3, t4, t5",
+                    + "| eval t6 = SUBTIME(strict_date_optional_time_nanos, date_time)"
+                    + "| fields t1, t2, t3, t4, t5, t6",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -690,7 +700,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("t2", "time"),
         schema("t3", "timestamp"),
         schema("t4", "time"),
-        schema("t5", "timestamp"));
+        schema("t5", "timestamp"),
+        schema("t6", "timestamp"));
     verifyDataRows(
         actual,
         rows(
@@ -698,7 +709,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             "09:07:42",
             "1984-04-11 14:52:18",
             "18:15:24",
-            "1984-04-12 00:00:00"));
+            "1984-04-12 00:00:00",
+            "1984-04-12 00:00:00.000123456"));
   }
 
   /** HOUR, HOUR_OF_DAY, DATE */
@@ -768,7 +780,7 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         executeQuery(
             String.format(
                 "source=%s | head 1 | eval d1 = SYSDATE(), d2 = SYSDATE(3), d3 = SYSDATE(6)|eval"
-                        + " df1 = DATE_FORMAT(d1, '%%Y-%%m-%%d %%T.%%f'), df2 = DATE_FORMAT(d2,"
+                    + " df1 = DATE_FORMAT(d1, '%%Y-%%m-%%d %%T.%%f'), df2 = DATE_FORMAT(d2,"
                     + " '%%Y-%%m-%%d %%T.%%f'), df3 = DATE_FORMAT(d3, '%%Y-%%m-%%d %%T.%%f') |"
                     + " fields d1, d2, d3, df1, df2, df3",
                 TEST_INDEX_DATE_FORMATS));
@@ -785,16 +797,17 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     final String DATETIME_P3_PATTERN = "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{1,3}$";
     final String DATETIME_P6_PATTERN = "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}$";
     final String DATETIME_P0_FMT_PATTERN = "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.000000$";
-    final String DATETIME_P3_FMT_PATTERN = "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{3}000$";
+    final String DATETIME_P3_FMT_PATTERN =
+        "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{3}000$";
     final String DATETIME_P6_FMT_PATTERN = "^\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}\\.\\d{6}$";
     verify(
-            actual.getJSONArray("datarows").getJSONArray(0),
-            Matchers.matchesPattern(DATETIME_P0_PATTERN),
-            Matchers.matchesPattern(DATETIME_P3_PATTERN),
-            Matchers.matchesPattern(DATETIME_P6_PATTERN),
-            Matchers.matchesPattern(DATETIME_P0_FMT_PATTERN),
-            Matchers.matchesPattern(DATETIME_P3_FMT_PATTERN),
-            Matchers.matchesPattern(DATETIME_P6_FMT_PATTERN));
+        actual.getJSONArray("datarows").getJSONArray(0),
+        Matchers.matchesPattern(DATETIME_P0_PATTERN),
+        Matchers.matchesPattern(DATETIME_P3_PATTERN),
+        Matchers.matchesPattern(DATETIME_P6_PATTERN),
+        Matchers.matchesPattern(DATETIME_P0_FMT_PATTERN),
+        Matchers.matchesPattern(DATETIME_P3_FMT_PATTERN),
+        Matchers.matchesPattern(DATETIME_P6_FMT_PATTERN));
   }
 
   /**
@@ -823,17 +836,16 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     verifyDataRows(actual, rows(13, 9, 5, 6, 103));
   }
 
-
   @Test
   public void testDayName() {
     JSONObject actual =
-            executeQuery(
-                    String.format(
-                            "source=%s | head 1 | eval d1 = DAYNAME(date), d2 = DAYNAME('1984-04-12'), d3 ="
-                                    + " DAYNAME(date_time),m1 = MONTHNAME(date), m2 = MONTHNAME('1984-04-12"
-                                    + " 10:07:42')"
-                                    + "| fields d1, d2, d3, m1, m2",
-                            TEST_INDEX_DATE_FORMATS));
+        executeQuery(
+            String.format(
+                "source=%s | head 1 | eval d1 = DAYNAME(date), d2 = DAYNAME('1984-04-12'), d3 ="
+                    + " DAYNAME(date_time),m1 = MONTHNAME(date), m2 = MONTHNAME('1984-04-12"
+                    + " 10:07:42')"
+                    + "| fields d1, d2, d3, m1, m2",
+                TEST_INDEX_DATE_FORMATS));
   }
 
   /**
@@ -943,8 +955,9 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                     + " DATE_FORMAT('2020-08-26 13:49:00', '%%a %%c %%e %%H %%h %%j %%k %%M %%S %%s"
                     + " %%W %%w %%'),d6 = FROM_DAYS(737000), d9 = DATETIME(date_time, '+08:00'),"
                     + " d10 = DATETIME('1984-04-12 09:07:42', '+00:00')| eval d11 = DATE_FORMAT(d9,"
-                    + " '%%U %%X %%V'), d12 = DATE_FORMAT(d10, '%%u %%v %%x')| fields d1, d2, d3,"
-                    + " d4, d5, d6, d9, d10, d11, d12",
+                    + " '%%U %%X %%V'), d12 = DATE_FORMAT(d10, '%%u %%v %%x'), d13 ="
+                    + " DATE_FORMAT(strict_date_time, '%%T.%%f')| fields d1, d2, d3, d4, d5, d6,"
+                    + " d9, d10, d11, d12, d13",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -957,7 +970,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("d9", "timestamp"),
         schema("d10", "timestamp"),
         schema("d11", "string"),
-        schema("d12", "string"));
+        schema("d12", "string"),
+        schema("d13", "string"));
 
     Instant expectedInstant =
         LocalDateTime.parse("1984-04-12T09:07:42").atZone(ZoneOffset.systemDefault()).toInstant();
@@ -980,7 +994,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             expectedDatetimeAtPlus8,
             expectedDatetimeAtUTC,
             "15 1984 15",
-            "15 15 1984"));
+            "15 15 1984",
+            "09:07:42.000123"));
   }
 
   @Test
@@ -996,8 +1011,9 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
                     + "d6 = DATEDIFF(date_time, time), "
                     + "d7 = DATEDIFF(MAKETIME(20, 30, 40), date),"
                     + "d8 = DATEDIFF(time, date_time), "
-                    + "d9 = DATEDIFF(TIME('13:20:00'), time)"
-                    + "| fields d1, d2, d3, d4, d5, d6, d7, d8, d9",
+                    + "d9 = DATEDIFF(TIME('13:20:00'), time),"
+                    + "t = MAKETIME(20.2, 49.5, 42.100502)"
+                    + "| fields d1, d2, d3, d4, d5, d6, d7, d8, d9, t",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -1009,7 +1025,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("d6", "long"),
         schema("d7", "long"),
         schema("d8", "long"),
-        schema("d9", "long"));
+        schema("d9", "long"),
+        schema("t", "time"));
 
     LocalDate today = LocalDate.now(ZoneOffset.UTC);
     long dateDiffWithToday = ChronoUnit.DAYS.between(LocalDate.parse("1984-04-12"), today);
@@ -1024,7 +1041,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             -dateDiffWithToday,
             dateDiffWithToday,
             dateDiffWithToday,
-            0));
+            0,
+            "20:50:42.100502"));
   }
 
   @Test
@@ -1087,10 +1105,10 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             String.format(
                 "source=%s | head 1 | eval m1 = MINUTE_OF_HOUR(date_time), "
                     + "m2 = MINUTE(time), "
-                    + "m3 = MINUTE_OF_DAY(date_time), "
+                    + "m3 = MINUTE_OF_DAY(strict_date_time), "
                     + "m4 = MINUTE_OF_DAY(time), "
                     + "m4 = MINUTE('13:49:23'), "
-                    + "m5 = MINUTE('2009-10-19 23:40:27'), "
+                    + "m5 = MINUTE('2009-10-19 23:40:27.123456'), "
                     + "m6 = MINUTE_OF_HOUR('16:20:39') "
                     + "| fields m1, m2, m3, m4, m5, m6",
                 TEST_INDEX_DATE_FORMATS));
@@ -1190,15 +1208,16 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     JSONObject actual =
         executeQuery(
             String.format(
-                    "source=%s | head 1 | eval r1 = convert_tz('2008-05-15 12:00:00', '+00:00', '+10:00') | eval"
-                    + " r2 = convert_tz(TIMESTAMP('2008-05-15 12:00:00'), '+00:00', '+10:00') |"
-                    + " eval r3 = convert_tz(date_time, '+00:00', '+10:00') |"
+                "source=%s | head 1 | eval r1 = convert_tz('2008-05-15 12:00:00', '+00:00',"
+                    + " '+10:00') | eval r2 = convert_tz(TIMESTAMP('2008-05-15 12:00:00'),"
+                    + " '+00:00', '+10:00') | eval r3 = convert_tz(date_time, '+00:00', '+10:00') |"
                     + " eval r4 = convert_tz('2008-05-15 12:00:00', '-00:00', '+00:00') | eval r5 ="
                     + " convert_tz('2008-05-15 12:00:00', '+10:00', '+11:00') | eval r6 ="
                     + " convert_tz('2021-05-12 11:34:50', '-08:00', '+09:00') | eval r7 ="
                     + " convert_tz('2021-05-12 11:34:50', '-12:00', '+12:00') | eval r8 ="
-                    + " convert_tz('2021-05-12 13:00:00', '+09:30', '+05:45') | fields r1, r2, r3,"
-                    + " r4, r5, r6, r7, r8",
+                    + " convert_tz('2021-05-12 13:00:00', '+09:30', '+05:45') | eval r9 ="
+                    + " convert_tz(strict_date_time, '+09:00', '+05:00')| fields r1, r2, r3, r4,"
+                    + " r5, r6, r7, r8, r9",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -1209,7 +1228,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("r5", "timestamp"),
         schema("r6", "timestamp"),
         schema("r7", "timestamp"),
-        schema("r8", "timestamp"));
+        schema("r8", "timestamp"),
+        schema("r9", "timestamp"));
     verifyDataRows(
         actual,
         rows(
@@ -1220,7 +1240,8 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
             "2008-05-15 13:00:00",
             "2021-05-13 04:34:50",
             "2021-05-13 11:34:50",
-            "2021-05-12 09:15:00"));
+            "2021-05-12 09:15:00",
+            "1984-04-12 05:07:42.000123456"));
   }
 
   @Test
@@ -1262,36 +1283,29 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
     verifyDataRows(actual, rows("%m.%d.%Y", "%H%i%s", "%Y-%m-%d %H.%i.%s", null));
   }
 
-  // TODO: Complete IT for MICROSECOND unit once it's supported
   @Test
   public void testExtractWithSimpleFormats() {
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s "
-                    + "| eval r1 = extract(YEAR FROM '1997-01-01 00:00:00') "
-                    + "| eval r2 = extract(YEAR FROM strict_date_optional_time_nanos) "
-                    + "| eval r3 = extract(year FROM basic_date) "
-                    + "| eval r4 = extract(QUARTER FROM strict_date_optional_time_nanos) "
-                    + "| eval r5 = extract(quarter FROM basic_date) "
-                    + "| eval r6 = extract(MONTH FROM strict_date_optional_time_nanos) "
-                    + "| eval r7 = extract(month FROM basic_date) "
-                    + "| eval r8 = extract(WEEK FROM strict_date_optional_time_nanos) "
-                    + "| eval r9 = extract(week FROM basic_date) "
-                    + "| eval r10 = extract(DAY FROM strict_date_optional_time_nanos) "
-                    + "| eval r11 = extract(day FROM basic_date) "
-                    + "| eval r12 = extract(HOUR FROM strict_date_optional_time_nanos) "
-                    + "| eval r13 = extract(hour FROM basic_time) "
-                    + "| eval r14 = extract(MINUTE FROM strict_date_optional_time_nanos) "
-                    + "| eval r15 = extract(minute FROM basic_time) "
-                    + "| eval r16 = extract(SECOND FROM strict_date_optional_time_nanos) "
-                    + "| eval r17 = extract(second FROM basic_time) "
-                    + "| eval r18 = extract(second FROM '09:07:42') "
-                    + "| eval r19 = extract(day FROM '1984-04-12') "
-                    //                        + "| eval r20 = extract(MICROSECOND FROM
-                    // timestamp('1984-04-12 09:07:42.123456789')) "
-                    + "| fields r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,"
-                    + " r16, r17, r18, r19 | head 1",
+                "source=%s | eval r1 = extract(YEAR FROM '1997-01-01 00:00:00') | eval r2 ="
+                    + " extract(YEAR FROM strict_date_optional_time_nanos) | eval r3 = extract(year"
+                    + " FROM basic_date) | eval r4 = extract(QUARTER FROM"
+                    + " strict_date_optional_time_nanos) | eval r5 = extract(quarter FROM"
+                    + " basic_date) | eval r6 = extract(MONTH FROM strict_date_optional_time_nanos)"
+                    + " | eval r7 = extract(month FROM basic_date) | eval r8 = extract(WEEK FROM"
+                    + " strict_date_optional_time_nanos) | eval r9 = extract(week FROM basic_date)"
+                    + " | eval r10 = extract(DAY FROM strict_date_optional_time_nanos) | eval r11 ="
+                    + " extract(day FROM basic_date) | eval r12 = extract(HOUR FROM"
+                    + " strict_date_optional_time_nanos) | eval r13 = extract(hour FROM basic_time)"
+                    + " | eval r14 = extract(MINUTE FROM strict_date_optional_time_nanos) | eval"
+                    + " r15 = extract(minute FROM basic_time) | eval r16 = extract(SECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r17 = extract(second FROM"
+                    + " basic_time) | eval r18 = extract(second FROM '09:07:42') | eval r19 ="
+                    + " extract(day FROM '1984-04-12') | eval r20 = extract(MICROSECOND FROM"
+                    + " timestamp('1984-04-12 09:07:42.123456789')) | fields r1, r2, r3, r4, r5,"
+                    + " r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16, r17, r18, r19, r20 |"
+                    + " head 1",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -1313,41 +1327,38 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("r16", "long"),
         schema("r17", "long"),
         schema("r18", "long"),
-        schema("r19", "long"));
+        schema("r19", "long"),
+        schema("r20", "long"));
     verifyDataRows(
-        actual, rows(1997, 1984, 1984, 2, 2, 4, 4, 15, 15, 12, 12, 9, 9, 7, 7, 42, 42, 42, 12));
+        actual,
+        rows(1997, 1984, 1984, 2, 2, 4, 4, 15, 15, 12, 12, 9, 9, 7, 7, 42, 42, 42, 12, 123456));
   }
 
-  // TODO: Complete IT for MICROSECOND unit once it's supported
   @Test
   public void testExtractWithComplexFormats() {
     JSONObject actual =
         executeQuery(
             String.format(
-                "source=%s "
-                    + "| eval r1 = extract(YEAR_MONTH FROM '1997-01-01 00:00:00') "
-                    + "| eval r2 = extract(DAY_HOUR FROM strict_date_optional_time_nanos) "
-                    + "| eval r3 = extract(DAY_HOUR FROM basic_date) "
-                    + "| eval r4 = extract(DAY_MINUTE FROM strict_date_optional_time_nanos) "
-                    + "| eval r5 = extract(DAY_MINUTE FROM basic_date) "
-                    + "| eval r6 = extract(DAY_SECOND FROM strict_date_optional_time_nanos) "
-                    + "| eval r7 = extract(DAY_SECOND FROM basic_date) "
-                    + "| eval r8 = extract(HOUR_MINUTE FROM strict_date_optional_time_nanos) "
-                    + "| eval r9 = extract(HOUR_MINUTE FROM basic_time) "
-                    + "| eval r10 = extract(HOUR_SECOND FROM strict_date_optional_time_nanos) "
-                    + "| eval r11 = extract(HOUR_SECOND FROM basic_time) "
-                    + "| eval r12 = extract(MINUTE_SECOND FROM strict_date_optional_time_nanos) "
-                    + "| eval r13 = extract(MINUTE_SECOND FROM basic_time) "
-                    //                        + "| eval r14 = extract(DAY_MICROSECOND FROM
-                    // strict_date_optional_time_nanos) "
-                    //                        + "| eval r15 = extract(HOUR_MICROSECOND FROM
-                    // strict_date_optional_time_nanos) "
-                    //                        + "| eval r16 = extract(MINUTE_MICROSECOND FROM
-                    // strict_date_optional_time_nanos) "
-                    //                        + "| eval r17 = extract(SECOND_MICROSECOND FROM
-                    // strict_date_optional_time_nanos) "
-                    + "| fields r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13 "
-                    + "| head 1",
+                "source=%s | eval r1 = extract(YEAR_MONTH FROM '1997-01-01 00:00:00') | eval r2 ="
+                    + " extract(DAY_HOUR FROM strict_date_optional_time_nanos) | eval r3 ="
+                    + " extract(DAY_HOUR FROM basic_date) | eval r4 = extract(DAY_MINUTE FROM"
+                    + " strict_date_optional_time_nanos) | eval r5 = extract(DAY_MINUTE FROM"
+                    + " basic_date) | eval r6 = extract(DAY_SECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r7 = extract(DAY_SECOND FROM"
+                    + " basic_date) | eval r8 = extract(HOUR_MINUTE FROM"
+                    + " strict_date_optional_time_nanos) | eval r9 = extract(HOUR_MINUTE FROM"
+                    + " basic_time) | eval r10 = extract(HOUR_SECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r11 = extract(HOUR_SECOND FROM"
+                    + " basic_time) | eval r12 = extract(MINUTE_SECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r13 = extract(MINUTE_SECOND FROM"
+                    + " basic_time) | eval r14 = extract(DAY_MICROSECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r15 = extract(HOUR_MICROSECOND FROM"
+                    + " strict_date_optional_time_nanos) | eval r16 = extract(MINUTE_MICROSECOND"
+                    + " FROM strict_date_optional_time_nanos) | eval r17 ="
+                    + " extract(SECOND_MICROSECOND FROM strict_date_optional_time_nanos) | eval r18"
+                    + " = extract(MICROSECOND FROM strict_date_optional_time_nanos) | fields r1,"
+                    + " r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16, r17, r18"
+                    + " | head 1",
                 TEST_INDEX_DATE_FORMATS));
     verifySchema(
         actual,
@@ -1363,30 +1374,51 @@ public class CalcitePPLDateTimeBuiltinFunctionIT extends CalcitePPLIntegTestCase
         schema("r10", "long"),
         schema("r11", "long"),
         schema("r12", "long"),
-        schema("r13", "long"));
+        schema("r13", "long"),
+        schema("r14", "long"),
+        schema("r15", "long"),
+        schema("r16", "long"),
+        schema("r17", "long"),
+        schema("r18", "long"));
     verifyDataRows(
         actual,
         rows(
-            199701, 1209, 1200, 120907, 120000, 12090742, 12000000, 907, 907, 90742, 90742, 742,
-            742));
+            199701,
+            1209,
+            1200,
+            120907,
+            120000,
+            12090742,
+            12000000,
+            907,
+            907,
+            90742,
+            90742,
+            742,
+            742,
+            12090742000123L,
+            90742000123L,
+            742000123,
+            42000123,
+            123));
   }
 
   @Test
   public void testMicrosecond() {
     JSONObject actual =
-            executeQuery(
-                    String.format(
-                            "source=%s | head 1 |  eval m1 = MICROSECOND(date_time), m2 = MICROSECOND(time), m3"
-                                    + " = MICROSECOND(date), m4 = MICROSECOND('13:45:22.123456789'), m5 ="
-                                    + " MICROSECOND('2012-09-13 13:45:22.123456789')| fields m1, m2, m3, m4, m5",
-                            TEST_INDEX_DATE_FORMATS));
+        executeQuery(
+            String.format(
+                "source=%s | head 1 |  eval m1 = MICROSECOND(date_time), m2 = MICROSECOND(time), m3"
+                    + " = MICROSECOND(date), m4 = MICROSECOND('13:45:22.123456789'), m5 ="
+                    + " MICROSECOND('2012-09-13 13:45:22.123456789')| fields m1, m2, m3, m4, m5",
+                TEST_INDEX_DATE_FORMATS));
     verifySchema(
-            actual,
-            schema("m1", "integer"),
-            schema("m2", "integer"),
-            schema("m3", "integer"),
-            schema("m4", "integer"),
-            schema("m5", "integer"));
+        actual,
+        schema("m1", "integer"),
+        schema("m2", "integer"),
+        schema("m3", "integer"),
+        schema("m4", "integer"),
+        schema("m5", "integer"));
     verifyDataRows(actual, rows(0, 0, 0, 123456, 123456));
   }
 }
