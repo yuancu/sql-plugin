@@ -7,8 +7,7 @@ package org.opensearch.sql.calcite.udf.datetimeUDF;
 
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.nullableDateUDT;
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.nullableTimestampUDT;
-import static org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils.formatDate;
-import static org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils.formatTimestamp;
+import static org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils.*;
 import static org.opensearch.sql.calcite.utils.datetime.DateTimeApplyUtils.convertToTemporalAmount;
 
 import com.google.common.collect.ImmutableList;
@@ -64,35 +63,18 @@ public class DateAddSubFunction implements UserDefinedFunction {
     boolean isAdd = (Boolean) args[4];
     SqlTypeName returnSqlType = (SqlTypeName) args[5];
     Instant base = InstantUtils.convertToInstant(argBase, sqlTypeName, false);
-    /*
-    Instant base =
-        switch (sqlTypeName) {
-          case DATE ->
-          // Convert it to milliseconds
-          InstantUtils.fromInternalDate(argBase.intValue());
-          case TIME ->
-          // Add an offset of today's date at 00:00:00
-          InstantUtils.fromInternalTime(argBase.intValue());
-          case TIMESTAMP -> InstantUtils.fromEpochMills(argBase.longValue());
-          default -> throw new IllegalArgumentException(
-              "Invalid argument type. Must be DATE, TIME, or TIMESTAMP, but got " + sqlTypeName);
-        };
-
-     */
+    FunctionProperties restored = restoreFunctionProperties(args[args.length - 1]);
     ExprValue resultDatetime =
         DateTimeFunctions.exprDateApplyInterval(
-            new FunctionProperties(),
+                restored,
             new ExprTimestampValue(base),
             convertToTemporalAmount(interval, unit),
             isAdd);
     Instant resultInstant = resultDatetime.timestampValue();
     if (returnSqlType == SqlTypeName.TIMESTAMP) {
       return formatTimestamp(LocalDateTime.ofInstant(resultInstant, ZoneOffset.UTC));
-      //return Timestamp.valueOf(LocalDateTime.ofInstant(resultInstant, ZoneOffset.UTC));
     } else {
       return formatDate(LocalDateTime.ofInstant(resultInstant, ZoneOffset.UTC).toLocalDate());
-      //return java.sql.Date.valueOf(
-      //    LocalDateTime.ofInstant(resultInstant, ZoneOffset.UTC).toLocalDate());
     }
   }
 

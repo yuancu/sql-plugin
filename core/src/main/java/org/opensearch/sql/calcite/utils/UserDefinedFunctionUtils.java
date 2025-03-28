@@ -10,20 +10,26 @@ import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.nullableTim
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.nullableTimestampUDT;
 import static org.opensearch.sql.utils.DateTimeFormatters.DATE_TIME_FORMATTER_VARIABLE_NANOS_OPTIONAL;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.ScalarFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
@@ -47,6 +53,8 @@ import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.PreprocessForUDTFunction;
 import org.opensearch.sql.data.type.ExprType;
 import org.opensearch.sql.exception.SemanticCheckException;
+import org.opensearch.sql.executor.QueryType;
+import org.opensearch.sql.expression.function.FunctionProperties;
 
 public class UserDefinedFunctionUtils {
   public static RelBuilder.AggCall TransferUserDefinedAggFunction(
@@ -306,8 +314,8 @@ public class UserDefinedFunctionUtils {
     int nano = localDateTime.getNano();
     if (nano == 0) return base;
 
-    String nanoStr = String.format("%09d", nano); // 保证9位
-    nanoStr = nanoStr.replaceFirst("0+$", "");   // 去除右边多余的0
+    String nanoStr = String.format(Locale.ENGLISH, "%09d", nano);
+    nanoStr = nanoStr.replaceFirst("0+$", "");
 
     return base + "." + nanoStr;
   }
@@ -317,8 +325,7 @@ public class UserDefinedFunctionUtils {
     int nano = time.getNano();
     if (nano == 0) return base;
 
-    // 保留 nano 秒并去除尾部多余的 0
-    String nanoStr = String.format("%09d", nano).replaceFirst("0+$", "");
+    String nanoStr = String.format(Locale.ENGLISH, "%09d", nano).replaceFirst("0+$", "");
     return base + "." + nanoStr;
   }
 
@@ -355,6 +362,13 @@ public class UserDefinedFunctionUtils {
       }
     }
     return type.getSqlTypeName();
+  }
+
+  public static FunctionProperties restoreFunctionProperties(Object timestampStr) {
+    String expression = (String) timestampStr;
+    Instant parsed = Instant.parse(expression);
+    FunctionProperties functionProperties = new FunctionProperties(parsed, ZoneId.systemDefault(), QueryType.PPL);
+    return functionProperties;
   }
 
 }
