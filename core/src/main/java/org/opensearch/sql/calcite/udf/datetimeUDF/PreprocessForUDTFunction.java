@@ -17,6 +17,8 @@ import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 import org.opensearch.sql.calcite.utils.datetime.InstantUtils;
+import org.opensearch.sql.data.model.ExprValue;
+import org.opensearch.sql.data.model.ExprValueUtils;
 import org.opensearch.sql.data.type.ExprCoreType;
 import org.opensearch.sql.data.type.ExprType;
 
@@ -29,15 +31,22 @@ public class PreprocessForUDTFunction implements UserDefinedFunction {
       return null;
     }
     SqlTypeName sqlTypeName = (SqlTypeName) args[1];
-    Instant instant = InstantUtils.fromStringExpr((String) candidate);
-    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    ExprType exprType = switch (sqlTypeName) {
+        case DATE -> ExprCoreType.DATE;
+        case TIME -> ExprCoreType.TIME;
+        case TIMESTAMP -> ExprCoreType.TIMESTAMP;
+        default -> throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
+    };
+    ExprValue datetime = ExprValueUtils.fromObjectValue(candidate, exprType);
+
     switch (sqlTypeName) {
       case DATE:
-        return SqlFunctions.toInt(java.sql.Date.valueOf(localDateTime.toLocalDate()));
+        return SqlFunctions.toInt(java.sql.Date.valueOf(datetime.dateValue()));
       case TIMESTAMP:
-        return SqlFunctions.toLong(java.sql.Timestamp.valueOf(localDateTime));
+        // datetime does not carry timezone information, use UTC to avoid timezone offset issues.
+        return SqlFunctions.toLong(java.sql.Timestamp.valueOf(LocalDateTime.ofInstant(datetime.timestampValue(), ZoneOffset.UTC)));
       case TIME:
-        return SqlFunctions.toInt(java.sql.Time.valueOf(localDateTime.toLocalTime()));
+        return SqlFunctions.toInt(java.sql.Time.valueOf(datetime.timeValue()));
       default:
         throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
     }
