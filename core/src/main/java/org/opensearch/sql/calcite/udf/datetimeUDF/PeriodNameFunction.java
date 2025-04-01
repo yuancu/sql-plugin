@@ -6,16 +6,14 @@
 package org.opensearch.sql.calcite.udf.datetimeUDF;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Objects;
+import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.calcite.utils.datetime.DateTimeParser;
-import org.opensearch.sql.calcite.utils.datetime.InstantUtils;
 
 /**
  * We cannot use dayname/monthname in calcite because they're different with our current performance
@@ -34,12 +32,9 @@ public class PeriodNameFunction implements UserDefinedFunction {
     if (candiate instanceof String) {
       localDate = DateTimeParser.parse(candiate.toString()).toLocalDate();
     } else if (argumentType == SqlTypeName.DATE) {
-      localDate =
-          LocalDate.ofInstant(InstantUtils.fromInternalDate((int) candiate), ZoneOffset.UTC);
+      localDate = SqlFunctions.internalToDate((int) candiate).toLocalDate();
     } else if (argumentType == SqlTypeName.TIMESTAMP) {
-      localDate =
-          LocalDateTime.ofInstant(InstantUtils.fromEpochMills((long) candiate), ZoneOffset.UTC)
-              .toLocalDate();
+      localDate = SqlFunctions.internalToTimestamp((long) candiate).toLocalDateTime().toLocalDate();
     } else {
       throw new IllegalArgumentException("something wrong");
     }
