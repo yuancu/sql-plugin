@@ -1,17 +1,16 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package org.opensearch.sql.calcite.udf.datetimeUDF;
 
-import static org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils.*;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
+import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
-import org.opensearch.sql.calcite.utils.datetime.InstantUtils;
-import org.opensearch.sql.data.model.ExprDateValue;
-import org.opensearch.sql.data.model.ExprTimeValue;
-import org.opensearch.sql.data.model.ExprTimestampValue;
+import org.opensearch.sql.data.model.ExprValue;
+import org.opensearch.sql.data.model.ExprValueUtils;
 
 public class PostprocessForUDTFunction implements UserDefinedFunction {
   @Override
@@ -21,17 +20,15 @@ public class PostprocessForUDTFunction implements UserDefinedFunction {
       return null;
     }
     SqlTypeName sqlTypeName = (SqlTypeName) args[1];
-    Instant instant = InstantUtils.convertToInstant(candidate, sqlTypeName);
-    LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-    switch (sqlTypeName) {
-      case DATE:
-        return new ExprDateValue(localDateTime.toLocalDate()).valueForCalcite();
-      case TIME:
-        return new ExprTimeValue(localDateTime.toLocalTime()).valueForCalcite();
-      case TIMESTAMP:
-        return new ExprTimestampValue(localDateTime).valueForCalcite();
-      default:
-        throw new IllegalArgumentException("Unsupported datetime type: " + sqlTypeName);
-    }
+
+    Object o =
+        switch (sqlTypeName) {
+          case DATE -> SqlFunctions.internalToDate((int) candidate).toLocalDate();
+          case TIME -> SqlFunctions.internalToTime((int) candidate).toLocalTime();
+          case TIMESTAMP -> SqlFunctions.internalToTimestamp((long) candidate).toLocalDateTime();
+          default -> throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
+        };
+    ExprValue datetime = ExprValueUtils.fromObjectValue(o);
+    return datetime.valueForCalcite();
   }
 }

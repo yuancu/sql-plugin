@@ -5,9 +5,6 @@
 
 package org.opensearch.sql.calcite.udf.datetimeUDF;
 
-import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.ExprUDT.*;
-
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Objects;
@@ -16,7 +13,7 @@ import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
-import org.opensearch.sql.calcite.utils.datetime.InstantUtils;
+import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.data.model.ExprValue;
 import org.opensearch.sql.data.model.ExprValueUtils;
 import org.opensearch.sql.data.type.ExprCoreType;
@@ -31,25 +28,19 @@ public class PreprocessForUDTFunction implements UserDefinedFunction {
       return null;
     }
     SqlTypeName sqlTypeName = (SqlTypeName) args[1];
-    ExprType exprType = switch (sqlTypeName) {
-        case DATE -> ExprCoreType.DATE;
-        case TIME -> ExprCoreType.TIME;
-        case TIMESTAMP -> ExprCoreType.TIMESTAMP;
-        default -> throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
-    };
+    ExprType exprType = UserDefinedFunctionUtils.convertSqlTypeToExprType(sqlTypeName);
     ExprValue datetime = ExprValueUtils.fromObjectValue(candidate, exprType);
 
-    switch (sqlTypeName) {
-      case DATE:
-        return SqlFunctions.toInt(java.sql.Date.valueOf(datetime.dateValue()));
-      case TIMESTAMP:
-        // datetime does not carry timezone information, use UTC to avoid timezone offset issues.
-        return SqlFunctions.toLong(java.sql.Timestamp.valueOf(LocalDateTime.ofInstant(datetime.timestampValue(), ZoneOffset.UTC)));
-      case TIME:
-        return SqlFunctions.toInt(java.sql.Time.valueOf(datetime.timeValue()));
-      default:
-        throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
-    }
+    return switch (sqlTypeName) {
+      case DATE -> SqlFunctions.toInt(java.sql.Date.valueOf(datetime.dateValue()));
+      case TIMESTAMP ->
+      // datetime does not carry timezone information, use UTC to avoid timezone offset issues.
+      SqlFunctions.toLong(
+          java.sql.Timestamp.valueOf(
+              LocalDateTime.ofInstant(datetime.timestampValue(), ZoneOffset.UTC)));
+      case TIME -> SqlFunctions.toInt(java.sql.Time.valueOf(datetime.timeValue()));
+      default -> throw new IllegalArgumentException("Unsupported sql type: " + sqlTypeName);
+    };
   }
 
   public static SqlReturnTypeInference getSqlReturnTypeInference(ExprType type) {

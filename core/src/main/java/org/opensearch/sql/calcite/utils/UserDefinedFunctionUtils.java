@@ -48,6 +48,7 @@ import org.opensearch.sql.calcite.type.ExprTimeType;
 import org.opensearch.sql.calcite.udf.UserDefinedAggFunction;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 import org.opensearch.sql.calcite.udf.datetimeUDF.PreprocessForUDTFunction;
+import org.opensearch.sql.data.type.ExprCoreType;
 import org.opensearch.sql.data.type.ExprType;
 import org.opensearch.sql.exception.SemanticCheckException;
 import org.opensearch.sql.executor.QueryType;
@@ -334,5 +335,21 @@ public class UserDefinedFunctionUtils {
     FunctionProperties functionProperties =
         new FunctionProperties(parsed, ZoneId.systemDefault(), QueryType.PPL);
     return functionProperties;
+  }
+
+  /**
+   * Convert SqlTypeName to ExprType.
+   *
+   * @param sqlTypeName the SqlTypeName to convert
+   * @return ExprType corresponding to the SqlTypeName
+   */
+  public static ExprType convertSqlTypeToExprType(SqlTypeName sqlTypeName) {
+    return switch (sqlTypeName) {
+      case DATE -> ExprCoreType.DATE;
+      case TIME -> ExprCoreType.TIME;
+      case TIMESTAMP -> ExprCoreType.TIMESTAMP;
+      default -> throw new IllegalArgumentException(
+          String.format("Sql type [%s] does not have a corresponding UDT.", sqlTypeName.name()));
+    };
   }
 }

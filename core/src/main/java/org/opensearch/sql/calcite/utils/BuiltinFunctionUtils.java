@@ -6,7 +6,6 @@
 package org.opensearch.sql.calcite.utils;
 
 import static java.lang.Math.E;
-import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.*;
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.getLegacyTypeName;
 import static org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils.*;
 
@@ -33,7 +32,6 @@ import org.apache.calcite.sql.fun.SqlLibraryOperators;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.type.OrdinalReturnTypeInference;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeTransforms;
@@ -314,14 +312,10 @@ public interface BuiltinFunctionUtils {
         // Built-in condition functions
       case "IF":
         return TransferUserDefinedFunction(
-            IfFunction.class,
-            "if",
-                ReturnTypes.ARG1.andThen(SqlTypeTransforms.FORCE_NULLABLE));
+            IfFunction.class, "if", ReturnTypes.ARG1.andThen(SqlTypeTransforms.FORCE_NULLABLE));
       case "IFNULL":
         return TransferUserDefinedFunction(
-            IfNullFunction.class,
-            "ifnull",
-            ReturnTypes.ARG0_FORCE_NULLABLE);
+            IfNullFunction.class, "ifnull", ReturnTypes.ARG0_FORCE_NULLABLE);
       case "NULLIF":
         return TransferUserDefinedFunction(
             NullIfFunction.class, "nullif", ReturnTypes.ARG0_FORCE_NULLABLE);
