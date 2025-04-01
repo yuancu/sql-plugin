@@ -13,7 +13,8 @@ import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.opensearch.sql.calcite.udf.UserDefinedFunction;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
-import org.opensearch.sql.calcite.utils.datetime.DateTimeParser;
+import org.opensearch.sql.data.model.ExprValueUtils;
+import org.opensearch.sql.data.type.ExprCoreType;
 
 /**
  * We cannot use dayname/monthname in calcite because they're different with our current performance
@@ -30,7 +31,7 @@ public class PeriodNameFunction implements UserDefinedFunction {
     SqlTypeName argumentType = (SqlTypeName) args[2];
     LocalDate localDate;
     if (candiate instanceof String) {
-      localDate = DateTimeParser.parse(candiate.toString()).toLocalDate();
+      localDate = ExprValueUtils.fromObjectValue(candiate, ExprCoreType.DATE).dateValue();
     } else if (argumentType == SqlTypeName.DATE) {
       localDate = SqlFunctions.internalToDate((int) candiate).toLocalDate();
     } else if (argumentType == SqlTypeName.TIMESTAMP) {
@@ -39,7 +40,6 @@ public class PeriodNameFunction implements UserDefinedFunction {
       throw new IllegalArgumentException("something wrong");
     }
     String nameType = (String) type;
-    // TODO: Double-check whether it is ok to always return US week & month names
     if (Objects.equals(nameType, "MONTHNAME")) {
       return localDate.getMonth().getDisplayName(TextStyle.FULL, Locale.getDefault());
     } else if (Objects.equals(nameType, "DAYNAME")) {
