@@ -78,7 +78,8 @@ class DataSourceServiceImplTest {
               }
             },
             dataSourceMetadataStorage,
-            dataSourceUserAuthorizationHelper);
+            dataSourceUserAuthorizationHelper,
+            null);
   }
 
   @Test
