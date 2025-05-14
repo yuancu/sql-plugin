@@ -24,6 +24,7 @@ import org.opensearch.sql.data.type.ExprType;
 import org.opensearch.sql.expression.datetime.DateTimeFunctions;
 import org.opensearch.sql.expression.function.FunctionProperties;
 import org.opensearch.sql.expression.function.ImplementorUDF;
+import org.opensearch.sql.expression.function.UDFOperandMetadata;
 
 /**
  * Implementation of the now-like functions:
@@ -55,7 +56,12 @@ public class CurrentFunction extends ImplementorUDF {
         };
   }
 
-  @RequiredArgsConstructor
+    @Override
+    public UDFOperandMetadata getOperandMetadata() {
+        return null;
+    }
+
+    @RequiredArgsConstructor
   public static class CurrentFunctionImplementor implements NotNullImplementor {
     private final ExprType returnType;
 

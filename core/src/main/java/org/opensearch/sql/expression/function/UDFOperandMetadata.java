@@ -18,11 +18,12 @@ import org.apache.calcite.sql.type.ImplicitCastOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlOperandTypeChecker;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.validate.SqlUserDefinedFunction;
 
 /**
  * This class is created for the compatibility with SqlUserDefinedFunction constructors when
  * creating UDFs, so that a type checker can be passed to the constructor of {@link
- * org.apache.calcite.sql.validate.SqlUserDefinedFunction} as an OperandMetadata.
+ * SqlUserDefinedFunction} as an OperandMetadata.
  */
 public interface UDFOperandMetadata extends SqlOperandMetadata, ImplicitCastOperandTypeChecker {
   SqlOperandTypeChecker getInnerTypeChecker();

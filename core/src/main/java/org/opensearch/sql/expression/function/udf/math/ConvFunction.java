@@ -14,6 +14,8 @@ import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.sql.type.FamilyOperandTypeChecker;
+import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.opensearch.sql.calcite.utils.PPLReturnTypes;
@@ -38,7 +40,7 @@ public class ConvFunction extends ImplementorUDF {
 
   @Override
   public UDFOperandMetadata getOperandMetadata() {
-    return null;
+    return UDFOperandMetadata.wrap((FamilyOperandTypeChecker) OperandTypes.STRING_NUMERIC_NUMERIC);
   }
 
   public static class ConvImplementor implements NotNullImplementor {

@@ -19,17 +19,17 @@ import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.type.ReturnTypes;
-import org.apache.calcite.sql.type.SqlTypeTransforms;
 import org.apache.calcite.sql.type.CompositeOperandTypeChecker;
 import org.apache.calcite.sql.type.OperandTypes;
+import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlTypeFamily;
+import org.apache.calcite.sql.type.SqlTypeTransforms;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.util.BuiltInMethod;
 import org.opensearch.sql.calcite.utils.PPLReturnTypes;
 import org.opensearch.sql.data.type.ExprCoreType;
 import org.opensearch.sql.expression.datetime.DateTimeFunctions;
-import org.opensearch.sql.expression.function.udf.CryptographicFunction;
+import org.opensearch.sql.expression.function.udf.Sha2Function;
 import org.opensearch.sql.expression.function.udf.datetime.AddSubDateFunction;
 import org.opensearch.sql.expression.function.udf.datetime.CurrentFunction;
 import org.opensearch.sql.expression.function.udf.datetime.DateAddSubFunction;
@@ -55,8 +55,6 @@ import org.opensearch.sql.expression.function.udf.math.ConvFunction;
 import org.opensearch.sql.expression.function.udf.math.DivideFunction;
 import org.opensearch.sql.expression.function.udf.math.EulerFunction;
 import org.opensearch.sql.expression.function.udf.math.ModFunction;
-import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
-import org.opensearch.sql.expression.datetime.DateTimeFunctions;
 
 /** Defines functions and operators that are implemented only by PPL */
 public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
@@ -68,7 +66,7 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
   public static final SqlOperator MOD = new ModFunction().toUDF("MOD");
   public static final SqlOperator CRC32 = new CRC32Function().toUDF("CRC32");
   public static final SqlOperator DIVIDE = new DivideFunction().toUDF("DIVIDE");
-  public static final SqlOperator SHA2 = CryptographicFunction.sha2().toUDF("SHA2");
+  public static final SqlOperator SHA2 = Sha2Function.sha2().toUDF("SHA2");
 
   // Datetime function
   public static final SqlOperator TIMESTAMP = new TimestampFunction().toUDF("TIMESTAMP");
@@ -223,7 +221,11 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
               DateTimeFunctions.class,
               "exprTimeDiff",
               PPLReturnTypes.TIME_FORCE_NULLABLE,
-              NullPolicy.ANY)
+              NullPolicy.ANY,
+              UDFOperandMetadata.wrap(
+                  (CompositeOperandTypeChecker)
+                      OperandTypes.family(SqlTypeFamily.TIME, SqlTypeFamily.TIME)
+                          .or(OperandTypes.STRING_STRING)))
           .toUDF("TIME_DIFF");
   public static final SqlOperator TIMESTAMPADD = new TimestampAddFunction().toUDF("TIMESTAMPADD");
   public static final SqlOperator TO_DAYS =
