@@ -44,11 +44,7 @@ public class LessIpFunction extends ImplementorUDF {
 
   @Override
   public UDFOperandMetadata getOperandMetadata() {
-    return UDFOperandMetadata.wrap(
-        (CompositeOperandTypeChecker)
-            OperandTypes.family(SqlTypeFamily.STRING, SqlTypeFamily.NULL)
-                .or(OperandTypes.family(SqlTypeFamily.NULL, SqlTypeFamily.STRING))
-                .or(OperandTypes.family(SqlTypeFamily.NULL, SqlTypeFamily.NULL)));
+    return new UDFOperandMetadata.IPOperandMetadata();
   }
 
   public static class LessImplementor implements NotNullImplementor {
