@@ -92,7 +92,7 @@ import org.apache.calcite.util.Util;
 import org.opensearch.sql.calcite.CalcitePlanContext;
 import org.opensearch.sql.calcite.plan.Scannable;
 import org.opensearch.sql.calcite.udf.udaf.NullableSqlAvgAggFunction;
-import org.opensearch.sql.calcite.validate.PPLOpTable;
+import org.opensearch.sql.calcite.validate.PplOpTable;
 
 /**
  * Calcite Tools Helper. This class is used to create customized: 1. Connection 2. JavaTypeFactory
@@ -343,7 +343,7 @@ public class CalciteToolsHelper {
     protected SqlValidator createSqlValidator(CalciteCatalogReader catalogReader) {
       return SqlValidatorUtil.newValidator(
           // this is different from the original implementation
-          PPLOpTable.getInstance(),
+          PplOpTable.getInstance(),
           catalogReader,
           context.getTypeFactory(),
           // this may be customized in the future

@@ -27,7 +27,7 @@ import org.opensearch.sql.expression.function.BuiltinFunctionName;
  * PPLOpTable is a custom implementation of {@link SqlOperatorTable} that provides a way to register
  * and look up PPL operators.
  */
-public class PPLOpTable implements SqlOperatorTable {
+public class PplOpTable implements SqlOperatorTable {
   // Implementation notes:
   //  - Did not extend ListSqlOperatorTable because it does not support registering multiple
   // SqlOperator to one name.
@@ -38,13 +38,13 @@ public class PPLOpTable implements SqlOperatorTable {
 
   protected Map<BuiltinFunctionName, ArrayList<SqlOperator>> operators;
 
-  private static final PPLOpTable INSTANCE = new PPLOpTable();
+  private static final PplOpTable INSTANCE = new PplOpTable();
 
-  public static PPLOpTable getInstance() {
+  public static PplOpTable getInstance() {
     return INSTANCE;
   }
 
-  private PPLOpTable() {
+  private PplOpTable() {
     this.operators = new HashMap<>();
   }
 

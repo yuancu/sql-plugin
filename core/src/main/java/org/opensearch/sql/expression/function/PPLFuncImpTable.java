@@ -255,7 +255,7 @@ import org.opensearch.sql.calcite.udf.udaf.TakeAggFunction;
 import org.opensearch.sql.calcite.utils.OpenSearchTypeFactory;
 import org.opensearch.sql.calcite.utils.PlanUtils;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
-import org.opensearch.sql.calcite.validate.PPLOpTable;
+import org.opensearch.sql.calcite.validate.PplOpTable;
 import org.opensearch.sql.exception.ExpressionEvaluationException;
 import org.opensearch.sql.executor.QueryType;
 
@@ -521,7 +521,7 @@ public class PPLFuncImpTable {
       }
 
       // Currently, only functions registered via registerOperator is added to PPLOpTable
-      PPLOpTable.getInstance().add(functionName, operator);
+      PplOpTable.getInstance().add(functionName, operator);
     }
 
     private static SqlOperandTypeChecker extractTypeCheckerFromUDF(

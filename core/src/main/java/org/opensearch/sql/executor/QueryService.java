@@ -153,6 +153,7 @@ public class QueryService {
                     CalcitePlanContext.create(
                         buildFrameworkConfig(), getQuerySizeLimit(), queryType);
                 RelNode relNode = analyze(plan, context);
+                RelNode validated = validate(relNode, context);
                 RelNode optimized = optimize(relNode);
                 RelNode calcitePlan = convertToCalcitePlan(optimized);
                 executionEngine.explain(calcitePlan, format, context, listener);
@@ -284,15 +285,24 @@ public class QueryService {
               }
             });
     SqlValidator validator = context.getValidator();
+    SqlNode validated;
     if (rewritten != null) {
       try {
-        SqlNode validated = validator.validate(rewritten);
-        log.debug("After validation [{}]", validated);
+        String before = rewritten.toString();
+        // rewritten will be modified in-place
+        validator.validate(rewritten);
+        log.debug("After validation [{}]", rewritten);
+        String after = rewritten.toString();
+        if (before.equals(after)) {
+          // If the rewritten SQL node is not modified, we can return the original RelNode as is
+          return relNode;
+        }
       } catch (CalciteContextException e) {
         throw new ExpressionEvaluationException(e.getMessage(), e);
       }
     } else {
       log.debug("Failed to rewrite the SQL node before validation: {}", root);
+      return relNode;
     }
 
     // Convert the validated SqlNode to RelNode
