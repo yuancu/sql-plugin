@@ -8,6 +8,7 @@ package org.opensearch.sql.calcite;
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.TYPE_FACTORY;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,13 @@ import lombok.Setter;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexLambdaRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.server.CalciteServerStatement;
+import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.RelBuilder;
 import org.opensearch.sql.ast.expression.UnresolvedExpression;
 import org.opensearch.sql.calcite.utils.CalciteToolsHelper;
+import org.opensearch.sql.calcite.validate.TypeChecker;
 import org.opensearch.sql.executor.QueryType;
 import org.opensearch.sql.expression.function.FunctionProperties;
 
@@ -35,6 +39,7 @@ public class CalcitePlanContext {
   public final FunctionProperties functionProperties;
   public final QueryType queryType;
   public final Integer querySizeLimit;
+  @Getter public final SqlValidator validator;
 
   @Getter @Setter private boolean isResolvingJoinCondition = false;
   @Getter @Setter private boolean isResolvingSubquery = false;
@@ -61,6 +66,13 @@ public class CalcitePlanContext {
     this.rexBuilder = new ExtendedRexBuilder(relBuilder.getRexBuilder());
     this.functionProperties = new FunctionProperties(QueryType.PPL);
     this.rexLambdaRefMap = new HashMap<>();
+    final CalciteServerStatement statement;
+    try {
+      statement = connection.createStatement().unwrap(CalciteServerStatement.class);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+    this.validator = TypeChecker.getValidator(statement, config);
   }
 
   public RexNode resolveJoinCondition(

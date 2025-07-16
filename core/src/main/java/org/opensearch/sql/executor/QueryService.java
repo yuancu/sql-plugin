@@ -10,6 +10,7 @@ package org.opensearch.sql.executor;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -17,15 +18,29 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitDef;
+import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
+import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
+import org.apache.calcite.rel.rel2sql.SqlImplementor;
+import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.dialect.SparkSqlDialect;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.util.SqlShuttle;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql2rel.SqlToRelConverter;
+import org.apache.calcite.sql2rel.StandardConvertletTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Programs;
@@ -41,6 +56,7 @@ import org.opensearch.sql.common.setting.Settings;
 import org.opensearch.sql.common.setting.Settings.Key;
 import org.opensearch.sql.datasource.DataSourceService;
 import org.opensearch.sql.exception.CalciteUnsupportedException;
+import org.opensearch.sql.exception.ExpressionEvaluationException;
 import org.opensearch.sql.exception.NonFallbackCalciteException;
 import org.opensearch.sql.planner.PlanContext;
 import org.opensearch.sql.planner.Planner;
@@ -56,6 +72,7 @@ public class QueryService {
   private final Analyzer analyzer;
   private final ExecutionEngine executionEngine;
   private final Planner planner;
+  private static final RelToSqlConverter converter = new RelToSqlConverter(SparkSqlDialect.DEFAULT);
 
   @Getter(lazy = true)
   private final CalciteRelNodeVisitor relNodeVisitor = new CalciteRelNodeVisitor();
@@ -102,7 +119,8 @@ public class QueryService {
                         settings.getSettingValue(Key.QUERY_SIZE_LIMIT),
                         queryType);
                 RelNode relNode = analyze(plan, context);
-                RelNode optimized = optimize(relNode);
+                RelNode validated = validate(relNode, context);
+                RelNode optimized = optimize(validated);
                 RelNode calcitePlan = convertToCalcitePlan(optimized);
                 executionEngine.execute(calcitePlan, context, listener);
                 return null;
@@ -245,6 +263,53 @@ public class QueryService {
   /** Analyze {@link UnresolvedPlan}. */
   public LogicalPlan analyze(UnresolvedPlan plan, QueryType queryType) {
     return analyzer.analyze(plan, new AnalysisContext(queryType));
+  }
+
+  private RelNode validate(RelNode relNode, CalcitePlanContext context) {
+    // Validation
+    SqlImplementor.Result result = converter.visitRoot(relNode);
+    SqlNode root = result.asStatement();
+    SqlNode rewritten =
+        root.accept(
+            new SqlShuttle() {
+              @Override
+              public SqlNode visit(SqlIdentifier id) {
+                // TODO: Not all SqlIdentifier with names of length 2 are
+                if (id.names.size() == 2) {
+                  // Remove the database qualifier, keep only the table name
+                  return new SqlIdentifier(
+                      Collections.singletonList(id.names.get(1)), id.getParserPosition());
+                }
+                return id;
+              }
+            });
+    SqlValidator validator = context.getValidator();
+    if (rewritten != null) {
+      try {
+        SqlNode validated = validator.validate(rewritten);
+        log.debug("After validation [{}]", validated);
+      } catch (CalciteContextException e) {
+        throw new ExpressionEvaluationException(e.getMessage(), e);
+      }
+    } else {
+      log.debug("Failed to rewrite the SQL node before validation: {}", root);
+    }
+
+    // Convert the validated SqlNode to RelNode
+    RelOptTable.ViewExpander viewExpander = context.config.getViewExpander();
+    RelOptCluster cluster = context.relBuilder.getCluster();
+    CalciteCatalogReader catalogReader =
+        validator.getCatalogReader().unwrap(CalciteCatalogReader.class);
+    SqlToRelConverter sql2rel =
+        new SqlToRelConverter(
+            viewExpander,
+            validator,
+            catalogReader,
+            cluster,
+            StandardConvertletTable.INSTANCE,
+            SqlToRelConverter.config());
+    RelRoot validatedRelRoot = sql2rel.convertQuery(rewritten, true, true);
+    return validatedRelRoot.rel;
   }
 
   /** Translate {@link LogicalPlan} to {@link PhysicalPlan}. */

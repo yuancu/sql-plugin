@@ -226,6 +226,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
@@ -254,6 +255,7 @@ import org.opensearch.sql.calcite.udf.udaf.TakeAggFunction;
 import org.opensearch.sql.calcite.utils.OpenSearchTypeFactory;
 import org.opensearch.sql.calcite.utils.PlanUtils;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
+import org.opensearch.sql.calcite.validate.PPLOpTable;
 import org.opensearch.sql.exception.ExpressionEvaluationException;
 import org.opensearch.sql.executor.QueryType;
 
@@ -344,6 +346,7 @@ public class PPLFuncImpTable {
    * engine should be registered here. This reduces coupling between the core module and particular
    * storage backends.
    */
+  @Getter
   private final Map<BuiltinFunctionName, List<Pair<CalciteFuncSignature, FunctionImp>>>
       externalFunctionRegistry;
 
@@ -352,7 +355,7 @@ public class PPLFuncImpTable {
    * implementations are independent of any specific data storage, should be registered here
    * internally.
    */
-  private final ImmutableMap<BuiltinFunctionName, AggHandler> aggFunctionRegistry;
+  @Getter private final ImmutableMap<BuiltinFunctionName, AggHandler> aggFunctionRegistry;
 
   /**
    * The external agg function registry. Agg Functions whose implementations depend on a specific
@@ -445,9 +448,9 @@ public class PPLFuncImpTable {
     List<RelDataType> argTypes = Arrays.stream(args).map(RexNode::getType).toList();
     try {
       for (Map.Entry<CalciteFuncSignature, FunctionImp> implement : implementList) {
-        if (implement.getKey().match(functionName.getName(), argTypes)) {
-          return implement.getValue().resolve(builder, args);
-        }
+        //        if (implement.getKey().match(functionName.getName(), argTypes)) {
+        return implement.getValue().resolve(builder, args);
+        //        }
       }
     } catch (Exception e) {
       throw new ExpressionEvaluationException(
@@ -516,6 +519,9 @@ public class PPLFuncImpTable {
             functionName,
             (RexBuilder builder, RexNode... node) -> builder.makeCall(operator, node));
       }
+
+      // Currently, only functions registered via registerOperator is added to PPLOpTable
+      PPLOpTable.getInstance().add(functionName, operator);
     }
 
     private static SqlOperandTypeChecker extractTypeCheckerFromUDF(

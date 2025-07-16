@@ -80,6 +80,8 @@ import org.apache.calcite.server.CalciteServerStatement;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -90,6 +92,7 @@ import org.apache.calcite.util.Util;
 import org.opensearch.sql.calcite.CalcitePlanContext;
 import org.opensearch.sql.calcite.plan.Scannable;
 import org.opensearch.sql.calcite.udf.udaf.NullableSqlAvgAggFunction;
+import org.opensearch.sql.calcite.validate.PPLOpTable;
 
 /**
  * Calcite Tools Helper. This class is used to create customized: 1. Connection 2. JavaTypeFactory
@@ -240,7 +243,7 @@ public class CalciteToolsHelper {
      * return {@link OpenSearchCalcitePreparingStmt}
      */
     @Override
-    protected CalcitePrepareImpl.CalcitePreparingStmt getPreparingStmt(
+    public CalcitePrepareImpl.CalcitePreparingStmt getPreparingStmt(
         CalcitePrepare.Context context,
         Type elementType,
         CalciteCatalogReader catalogReader,
@@ -331,6 +334,25 @@ public class CalciteToolsHelper {
         };
       }
       return super.implement(root);
+    }
+
+    /**
+     * Imitated {@link org.apache.calcite.prepare.CalcitePrepareImpl}#createSqlValidator to create a
+     * SqlValidator
+     */
+    protected SqlValidator createSqlValidator(CalciteCatalogReader catalogReader) {
+      return SqlValidatorUtil.newValidator(
+          // this is different from the original implementation
+          PPLOpTable.getInstance(),
+          catalogReader,
+          context.getTypeFactory(),
+          // this may be customized in the future
+          SqlValidator.Config.DEFAULT);
+    }
+
+    @Override
+    public SqlValidator getSqlValidator() {
+      return super.getSqlValidator();
     }
   }
 
