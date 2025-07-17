@@ -214,7 +214,6 @@ import static org.opensearch.sql.expression.function.BuiltinFunctionName.YEARWEE
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -332,6 +331,18 @@ public class PPLFuncImpTable {
     final AggBuilder aggBuilder = new AggBuilder();
     aggBuilder.populate();
     INSTANCE = new PPLFuncImpTable(builder, aggBuilder);
+
+    // Some operators are registered via register instead of registerOperator
+    // We add them explicitly so that they can be found during validation
+    var pplOps = PplOpTable.getInstance();
+    pplOps.add(JSON_ARRAY, SqlStdOperatorTable.JSON_ARRAY);
+    pplOps.add(JSON_OBJECT, SqlStdOperatorTable.JSON_OBJECT);
+    pplOps.add(INTERNAL_ITEM, SqlStdOperatorTable.ITEM);
+    // pplOps.add(TYPEOF, ... );
+    pplOps.add(IF, SqlStdOperatorTable.CASE);
+    pplOps.add(NULLIF, SqlStdOperatorTable.CASE);
+    pplOps.add(IS_EMPTY, SqlStdOperatorTable.IS_EMPTY);
+    pplOps.add(IS_BLANK, SqlStdOperatorTable.IS_EMPTY);
   }
 
   /**
@@ -535,7 +546,9 @@ public class PPLFuncImpTable {
               TRIM,
               SqlStdOperatorTable.TRIM,
               STRCMP,
-              SqlLibraryOperators.STRCMP);
+              SqlLibraryOperators.STRCMP,
+              XOR,
+              SqlStdOperatorTable.NOT_EQUALS);
       PplOpTable.getInstance().add(functionName, replacement.getOrDefault(functionName, operator));
     }
 
@@ -720,6 +733,9 @@ public class PPLFuncImpTable {
       registerOperator(CRC32, PPLBuiltinOperators.CRC32);
       registerOperator(DIVIDE, PPLBuiltinOperators.DIVIDE);
       registerOperator(DIVIDEFUNCTION, PPLBuiltinOperators.DIVIDE);
+      // SqlStdOperatorTable.SQRT is declared but not implemented. The call to SQRT in Calcite is
+      // converted to POWER(x, 0.5).
+      registerOperator(SQRT, PPLBuiltinOperators.SQRT);
       registerOperator(SHA2, PPLBuiltinOperators.SHA2);
       registerOperator(CIDRMATCH, PPLBuiltinOperators.CIDRMATCH);
       registerOperator(INTERNAL_GROK, PPLBuiltinOperators.GROK);
@@ -860,23 +876,12 @@ public class PPLFuncImpTable {
                   OperandTypes.family(SqlTypeFamily.ARRAY, SqlTypeFamily.INTEGER)
                       .or(OperandTypes.family(SqlTypeFamily.MAP, SqlTypeFamily.ANY)),
               false));
-      // SqlStdOperatorTable.SQRT is declared but not implemented. The call to SQRT in Calcite is
-      // converted to POWER(x, 0.5).
-      register(
-          SQRT,
-          createFunctionImpWithTypeChecker(
-              (builder, arg) ->
-                  builder.makeCall(
-                      SqlStdOperatorTable.POWER,
-                      arg,
-                      builder.makeApproxLiteral(BigDecimal.valueOf(0.5))),
-              PPLTypeChecker.family(SqlTypeFamily.NUMERIC)));
       register(
           TYPEOF,
           (FunctionImp1)
               (builder, arg) ->
                   builder.makeLiteral(getLegacyTypeName(arg.getType(), QueryType.PPL)));
-      register(XOR, new XOR_FUNC());
+      registerOperator(XOR, PPLBuiltinOperators.XOR);
       // SqlStdOperatorTable.CASE.getOperandTypeChecker is null. We manually create a type checker
       // for it. The second and third operands are required to be of the same type. If not,
       // it will throw an IllegalArgumentException with information Can't find leastRestrictive type

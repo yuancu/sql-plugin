@@ -130,7 +130,7 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
           return super.rewriteCall(validator, call);
         }
       };
-  public static final SqlOperator ATAN =
+  public static final SqlFunction ATAN =
       new SqlFunction(
           "ATAN",
           SqlKind.OTHER_FUNCTION,
@@ -146,6 +146,24 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
                 call.getParserPosition(), call.operand(0), call.operand(1));
           }
           return super.rewriteCall(validator, call);
+        }
+      };
+
+  public static final SqlFunction SQRT =
+      new SqlFunction(
+          "SQRT",
+          SqlKind.OTHER_FUNCTION,
+          ReturnTypes.DOUBLE_NULLABLE,
+          null,
+          OperandTypes.NUMERIC,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite SQRT(x) to POWER(x, 0.5)
+          return SqlStdOperatorTable.POWER.createCall(
+              call.getParserPosition(),
+              call.operand(0),
+              SqlLiteral.createExactNumeric("0.5", call.getParserPosition()));
         }
       };
 
@@ -235,6 +253,21 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
   // Condition function
   public static final SqlOperator EARLIEST = new EarliestFunction().toUDF("EARLIEST");
   public static final SqlOperator LATEST = new LatestFunction().toUDF("LATEST");
+  public static final SqlFunction XOR =
+      new SqlFunction(
+          "XOR",
+          SqlKind.OTHER_FUNCTION,
+          ReturnTypes.BOOLEAN_NULLABLE,
+          null,
+          OperandTypes.BOOLEAN_BOOLEAN,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite XOR(x, y) to NOT_EQUALS(x, y)
+          return SqlStdOperatorTable.NOT_EQUALS.createCall(
+              call.getParserPosition(), call.operand(0), call.operand(1));
+        }
+      };
 
   // Datetime function
   public static final SqlOperator TIMESTAMP = new TimestampFunction().toUDF("TIMESTAMP");

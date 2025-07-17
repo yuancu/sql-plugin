@@ -101,6 +101,7 @@ public class PplOpTable implements SqlOperatorTable {
       case "CONVERT" -> BuiltinFunctionName.CONV;
       case "ILIKE" -> BuiltinFunctionName.LIKE;
       case "CHAR_LENGTH" -> BuiltinFunctionName.LENGTH;
+      case "NOT_EQUALS", "<>" -> BuiltinFunctionName.XOR;
       default -> BuiltinFunctionName.of(name).orElse(null);
     };
   }
