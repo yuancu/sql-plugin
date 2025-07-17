@@ -28,6 +28,7 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.SparkSqlDialect;
 import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.test.CalciteAssert;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Programs;
@@ -38,6 +39,7 @@ import org.opensearch.sql.ast.Node;
 import org.opensearch.sql.ast.statement.Query;
 import org.opensearch.sql.calcite.CalcitePlanContext;
 import org.opensearch.sql.calcite.CalciteRelNodeVisitor;
+import org.opensearch.sql.calcite.validate.TypeChecker;
 import org.opensearch.sql.common.setting.Settings;
 import org.opensearch.sql.common.setting.Settings.Key;
 import org.opensearch.sql.ppl.antlr.PPLSyntaxParser;
@@ -49,12 +51,14 @@ public class CalcitePPLAbstractTest {
   private final CalciteRelNodeVisitor planTransformer;
   private final RelToSqlConverter converter;
   protected final Settings settings;
+  private SqlValidator validator;
 
   public CalcitePPLAbstractTest(CalciteAssert.SchemaSpec... schemaSpecs) {
     this.config = config(schemaSpecs);
     this.planTransformer = new CalciteRelNodeVisitor();
     this.converter = new RelToSqlConverter(SparkSqlDialect.DEFAULT);
     this.settings = mock(Settings.class);
+    this.validator = TypeChecker.getValidator(null, config.build());
   }
 
   public PPLSyntaxParser pplParser = new PPLSyntaxParser();

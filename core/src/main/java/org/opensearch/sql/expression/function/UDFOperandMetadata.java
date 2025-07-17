@@ -5,7 +5,6 @@
 
 package org.opensearch.sql.expression.function;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -35,14 +34,12 @@ public interface UDFOperandMetadata extends SqlOperandMetadata {
 
       @Override
       public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramTypes is not implemented for UDFOperandMetadata");
       }
 
       @Override
       public List<String> paramNames() {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramNames is not implemented for UDFOperandMetadata");
       }
 
       @Override
@@ -78,14 +75,14 @@ public interface UDFOperandMetadata extends SqlOperandMetadata {
 
       @Override
       public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException(
+            "paramTypes is not supported for CompositeOperandTypeChecker");
       }
 
       @Override
       public List<String> paramNames() {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException(
+            "paramNames is not supported for CompositeOperandTypeChecker");
       }
 
       @Override
