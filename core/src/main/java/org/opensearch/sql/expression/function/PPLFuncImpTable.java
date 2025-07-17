@@ -529,7 +529,13 @@ public class PPLFuncImpTable {
         BuiltinFunctionName functionName, SqlOperator operator) {
       // replacement contains the real implementations -- some operators are rewritten.
       final Map<BuiltinFunctionName, SqlOperator> replacement =
-          Map.of(LOG, SqlLibraryOperators.LOG);
+          Map.of(
+              LOG,
+              SqlLibraryOperators.LOG,
+              TRIM,
+              SqlStdOperatorTable.TRIM,
+              STRCMP,
+              SqlLibraryOperators.STRCMP);
       PplOpTable.getInstance().add(functionName, replacement.getOrDefault(functionName, operator));
     }
 
@@ -833,63 +839,16 @@ public class PPLFuncImpTable {
 
       // Register implementation.
       // Note, make the implementation an individual class if too complex.
-      register(
-          TRIM,
-          createFunctionImpWithTypeChecker(
-              (builder, arg) ->
-                  builder.makeCall(
-                      SqlStdOperatorTable.TRIM,
-                      builder.makeFlag(Flag.BOTH),
-                      builder.makeLiteral(" "),
-                      arg),
-              PPLTypeChecker.family(SqlTypeFamily.STRING)));
+      registerOperator(TRIM, PPLBuiltinOperators.TRIM);
+      registerOperator(LTRIM, PPLBuiltinOperators.LTRIM);
+      registerOperator(RTRIM, PPLBuiltinOperators.RTRIM);
 
-      register(
-          LTRIM,
-          createFunctionImpWithTypeChecker(
-              (builder, arg) ->
-                  builder.makeCall(
-                      SqlStdOperatorTable.TRIM,
-                      builder.makeFlag(Flag.LEADING),
-                      builder.makeLiteral(" "),
-                      arg),
-              PPLTypeChecker.family(SqlTypeFamily.STRING)));
-      register(
-          RTRIM,
-          createFunctionImpWithTypeChecker(
-              (builder, arg) ->
-                  builder.makeCall(
-                      SqlStdOperatorTable.TRIM,
-                      builder.makeFlag(Flag.TRAILING),
-                      builder.makeLiteral(" "),
-                      arg),
-              PPLTypeChecker.family(SqlTypeFamily.STRING)));
-      register(
-          ATAN,
-          createFunctionImpWithTypeChecker(
-              (builder, arg1, arg2) -> builder.makeCall(SqlStdOperatorTable.ATAN2, arg1, arg2),
-              PPLTypeChecker.family(SqlTypeFamily.NUMERIC, SqlTypeFamily.NUMERIC)));
-      register(
-          STRCMP,
-          createFunctionImpWithTypeChecker(
-              (builder, arg1, arg2) -> builder.makeCall(SqlLibraryOperators.STRCMP, arg2, arg1),
-              PPLTypeChecker.family(SqlTypeFamily.STRING, SqlTypeFamily.STRING)));
+      registerOperator(ATAN, PPLBuiltinOperators.ATAN);
+      registerOperator(STRCMP, PPLBuiltinOperators.STRCMP);
       // SqlStdOperatorTable.SUBSTRING.getOperandTypeChecker is null. We manually create a type
       // checker for it.
-      register(
-          SUBSTRING,
-          wrapWithCompositeTypeChecker(
-              SqlStdOperatorTable.SUBSTRING,
-              (CompositeOperandTypeChecker)
-                  OperandTypes.STRING_INTEGER.or(OperandTypes.STRING_INTEGER_INTEGER),
-              false));
-      register(
-          SUBSTR,
-          wrapWithCompositeTypeChecker(
-              SqlStdOperatorTable.SUBSTRING,
-              (CompositeOperandTypeChecker)
-                  OperandTypes.STRING_INTEGER.or(OperandTypes.STRING_INTEGER_INTEGER),
-              false));
+      registerOperator(SUBSTRING, SqlStdOperatorTable.SUBSTRING);
+      registerOperator(SUBSTR, SqlStdOperatorTable.SUBSTRING);
       // SqlStdOperatorTable.ITEM.getOperandTypeChecker() checks only the first operand instead of
       // all operands. Therefore, we wrap it with a custom CompositeOperandTypeChecker to check both
       // operands.

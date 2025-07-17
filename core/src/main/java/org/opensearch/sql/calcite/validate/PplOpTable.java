@@ -99,6 +99,8 @@ public class PplOpTable implements SqlOperatorTable {
   private BuiltinFunctionName sqlFunctionNameToPplFunctionName(String name) {
     return switch (name.toUpperCase(Locale.ROOT)) {
       case "CONVERT" -> BuiltinFunctionName.CONV;
+      case "ILIKE" -> BuiltinFunctionName.LIKE;
+      case "CHAR_LENGTH" -> BuiltinFunctionName.LENGTH;
       default -> BuiltinFunctionName.of(name).orElse(null);
     };
   }

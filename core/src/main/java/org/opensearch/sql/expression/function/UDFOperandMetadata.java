@@ -5,7 +5,6 @@
 
 package org.opensearch.sql.expression.function;
 
-import java.util.Collections;
 import java.util.List;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -101,12 +100,14 @@ public interface UDFOperandMetadata extends SqlOperandMetadata, ImplicitCastOper
 
       @Override
       public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
-        throw new IllegalStateException("paramTypes is not supported for CompositeOperandTypeChecker");
+        throw new IllegalStateException(
+            "paramTypes is not supported for CompositeOperandTypeChecker");
       }
 
       @Override
       public List<String> paramNames() {
-        throw new IllegalStateException("paramNames is not supported for CompositeOperandTypeChecker");
+        throw new IllegalStateException(
+            "paramNames is not supported for CompositeOperandTypeChecker");
       }
 
       @Override

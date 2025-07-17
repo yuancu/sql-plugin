@@ -22,9 +22,12 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlLibraryOperators;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.fun.SqlTrimFunction;
 import org.apache.calcite.sql.type.CompositeOperandTypeChecker;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
@@ -125,6 +128,107 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
                 call.getParserPosition(), call.operand(1), call.operand(0));
           }
           return super.rewriteCall(validator, call);
+        }
+      };
+  public static final SqlOperator ATAN =
+      new SqlFunction(
+          "ATAN",
+          SqlKind.OTHER_FUNCTION,
+          ReturnTypes.DOUBLE_NULLABLE,
+          null,
+          OperandTypes.NUMERIC_OPTIONAL_NUMERIC,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite ATAN(x, y) to ATAN2(y, x)
+          if (call.operandCount() == 2) {
+            return SqlStdOperatorTable.ATAN2.createCall(
+                call.getParserPosition(), call.operand(0), call.operand(1));
+          }
+          return super.rewriteCall(validator, call);
+        }
+      };
+
+  // String functions
+  public static final SqlFunction TRIM =
+      new SqlFunction(
+          "TRIM",
+          SqlKind.TRIM,
+          ReturnTypes.VARCHAR_NULLABLE,
+          null,
+          OperandTypes.CHARACTER,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite TRIM(x) to TRIM(BOTH, ' ',  x)
+          if (call.operandCount() == 1) {
+            return SqlStdOperatorTable.TRIM.createCall(
+                call.getParserPosition(),
+                SqlLiteral.createSymbol(SqlTrimFunction.Flag.BOTH, call.getParserPosition()),
+                SqlLiteral.createCharString(" ", call.getParserPosition()),
+                call.operand(0));
+          }
+          return super.rewriteCall(validator, call);
+        }
+      };
+
+  public static final SqlFunction LTRIM =
+      new SqlFunction(
+          "LTRIM",
+          SqlKind.LTRIM,
+          ReturnTypes.VARCHAR_NULLABLE,
+          null,
+          OperandTypes.CHARACTER,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite LTRIM(x) to TRIM(LEADING, ' ', x)
+          if (call.operandCount() == 1) {
+            return SqlStdOperatorTable.TRIM.createCall(
+                call.getParserPosition(),
+                SqlLiteral.createSymbol(SqlTrimFunction.Flag.LEADING, call.getParserPosition()),
+                SqlLiteral.createCharString(" ", call.getParserPosition()),
+                call.operand(0));
+          }
+          return super.rewriteCall(validator, call);
+        }
+      };
+
+  public static final SqlFunction RTRIM =
+      new SqlFunction(
+          "RTRIM",
+          SqlKind.RTRIM,
+          ReturnTypes.VARCHAR_NULLABLE,
+          null,
+          OperandTypes.CHARACTER,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite RTRIM(x) to TRIM(TRAILING, ' ', x)
+          if (call.operandCount() == 1) {
+            return SqlStdOperatorTable.TRIM.createCall(
+                call.getParserPosition(),
+                SqlLiteral.createSymbol(SqlTrimFunction.Flag.TRAILING, call.getParserPosition()),
+                SqlLiteral.createCharString(" ", call.getParserPosition()),
+                call.operand(0));
+          }
+          return super.rewriteCall(validator, call);
+        }
+      };
+
+  public static final SqlFunction STRCMP =
+      new SqlFunction(
+          "STRCMP",
+          SqlKind.OTHER_FUNCTION,
+          ReturnTypes.INTEGER_NULLABLE,
+          null,
+          OperandTypes.STRING_STRING,
+          SqlFunctionCategory.USER_DEFINED_FUNCTION) {
+        @Override
+        public SqlNode rewriteCall(SqlValidator validator, SqlCall call) {
+          // Rewrite STRCMP(x, y) to STRCMP(y, x)
+          return SqlLibraryOperators.STRCMP.createCall(
+              call.getParserPosition(), call.operand(1), call.operand(0));
         }
       };
 
