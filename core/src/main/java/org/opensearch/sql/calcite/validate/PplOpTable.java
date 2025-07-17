@@ -8,8 +8,8 @@ package org.opensearch.sql.calcite.validate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -79,11 +79,28 @@ public class PplOpTable implements SqlOperatorTable {
   }
 
   protected void lookUpOperators(String name, Consumer<SqlOperator> consumer) {
-    final Optional<BuiltinFunctionName> funcNameOpt = BuiltinFunctionName.of(name);
-    if (funcNameOpt.isEmpty()) {
-      return; // No such function
+    final BuiltinFunctionName funcNameOpt = sqlFunctionNameToPplFunctionName(name);
+    if (funcNameOpt == null) {
+      return; // No function with this name
     }
-    operators.get(funcNameOpt.get()).forEach(consumer);
+    if (!operators.containsKey(funcNameOpt)) {
+      return; // The function is not registered
+    }
+    operators.get(funcNameOpt).forEach(consumer);
+  }
+
+  /**
+   * At this stage, the function name of a Calcite's builtin operator is acquired via
+   * `sqlFunction.getSqlIdentifier()`
+   *
+   * <p>This will return the name in Calcite, instead of that registered in PPL. We use this method
+   * to convert the Calcite function name to the PPL function name.
+   */
+  private BuiltinFunctionName sqlFunctionNameToPplFunctionName(String name) {
+    return switch (name.toUpperCase(Locale.ROOT)) {
+      case "CONVERT" -> BuiltinFunctionName.CONV;
+      default -> BuiltinFunctionName.of(name).orElse(null);
+    };
   }
 
   protected static SqlFunctionCategory category(SqlOperator operator) {

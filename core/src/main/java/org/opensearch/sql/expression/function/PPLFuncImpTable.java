@@ -61,6 +61,7 @@ import static org.opensearch.sql.expression.function.BuiltinFunctionName.DAY_OF_
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.DAY_OF_YEAR;
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.DEGREES;
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.DIVIDE;
+import static org.opensearch.sql.expression.function.BuiltinFunctionName.DIVIDEFUNCTION;
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.E;
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.EARLIEST;
 import static org.opensearch.sql.expression.function.BuiltinFunctionName.EQUAL;
@@ -521,7 +522,15 @@ public class PPLFuncImpTable {
       }
 
       // Currently, only functions registered via registerOperator is added to PPLOpTable
-      PplOpTable.getInstance().add(functionName, operator);
+      registerToCatalogWithReplace(functionName, operator);
+    }
+
+    private static void registerToCatalogWithReplace(
+        BuiltinFunctionName functionName, SqlOperator operator) {
+      // replacement contains the real implementations -- some operators are rewritten.
+      final Map<BuiltinFunctionName, SqlOperator> replacement =
+          Map.of(LOG, SqlLibraryOperators.LOG);
+      PplOpTable.getInstance().add(functionName, replacement.getOrDefault(functionName, operator));
     }
 
     private static SqlOperandTypeChecker extractTypeCheckerFromUDF(
@@ -704,6 +713,7 @@ public class PPLFuncImpTable {
       registerOperator(MODULUSFUNCTION, PPLBuiltinOperators.MOD);
       registerOperator(CRC32, PPLBuiltinOperators.CRC32);
       registerOperator(DIVIDE, PPLBuiltinOperators.DIVIDE);
+      registerOperator(DIVIDEFUNCTION, PPLBuiltinOperators.DIVIDE);
       registerOperator(SHA2, PPLBuiltinOperators.SHA2);
       registerOperator(CIDRMATCH, PPLBuiltinOperators.CIDRMATCH);
       registerOperator(INTERNAL_GROK, PPLBuiltinOperators.GROK);
@@ -714,6 +724,7 @@ public class PPLFuncImpTable {
       registerOperator(SIMPLE_QUERY_STRING, PPLBuiltinOperators.SIMPLE_QUERY_STRING);
       registerOperator(QUERY_STRING, PPLBuiltinOperators.QUERY_STRING);
       registerOperator(MULTI_MATCH, PPLBuiltinOperators.MULTI_MATCH);
+      registerOperator(LOG, PPLBuiltinOperators.LOG);
 
       // Register PPL Datetime UDF operator
       registerOperator(TIMESTAMP, PPLBuiltinOperators.TIMESTAMP);
@@ -890,20 +901,6 @@ public class PPLFuncImpTable {
                   OperandTypes.family(SqlTypeFamily.ARRAY, SqlTypeFamily.INTEGER)
                       .or(OperandTypes.family(SqlTypeFamily.MAP, SqlTypeFamily.ANY)),
               false));
-      register(
-          LOG,
-          createFunctionImpWithTypeChecker(
-              (builder, arg1, arg2) -> builder.makeCall(SqlLibraryOperators.LOG, arg2, arg1),
-              PPLTypeChecker.family(SqlTypeFamily.NUMERIC, SqlTypeFamily.NUMERIC)));
-      register(
-          LOG,
-          createFunctionImpWithTypeChecker(
-              (builder, arg) ->
-                  builder.makeCall(
-                      SqlLibraryOperators.LOG,
-                      arg,
-                      builder.makeApproxLiteral(BigDecimal.valueOf(Math.E))),
-              PPLTypeChecker.family(SqlTypeFamily.NUMERIC)));
       // SqlStdOperatorTable.SQRT is declared but not implemented. The call to SQRT in Calcite is
       // converted to POWER(x, 0.5).
       register(

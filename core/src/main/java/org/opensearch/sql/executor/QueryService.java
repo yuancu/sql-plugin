@@ -275,7 +275,7 @@ public class QueryService {
             new SqlShuttle() {
               @Override
               public SqlNode visit(SqlIdentifier id) {
-                // TODO: Not all SqlIdentifier with names of length 2 are
+                // TODO: Maybe not all SqlIdentifier with names of length 2 are db.table
                 if (id.names.size() == 2) {
                   // Remove the database qualifier, keep only the table name
                   return new SqlIdentifier(
@@ -285,7 +285,6 @@ public class QueryService {
               }
             });
     SqlValidator validator = context.getValidator();
-    SqlNode validated;
     if (rewritten != null) {
       try {
         String before = rewritten.toString();

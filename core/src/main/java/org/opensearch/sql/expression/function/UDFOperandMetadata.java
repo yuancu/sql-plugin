@@ -48,14 +48,12 @@ public interface UDFOperandMetadata extends SqlOperandMetadata, ImplicitCastOper
 
       @Override
       public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramTypes is not implemented for UDFOperandMetadata");
       }
 
       @Override
       public List<String> paramNames() {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramNames is not implemented for UDFOperandMetadata");
       }
 
       @Override
@@ -103,14 +101,12 @@ public interface UDFOperandMetadata extends SqlOperandMetadata, ImplicitCastOper
 
       @Override
       public List<RelDataType> paramTypes(RelDataTypeFactory typeFactory) {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramTypes is not supported for CompositeOperandTypeChecker");
       }
 
       @Override
       public List<String> paramNames() {
-        // This function is not used in the current context, so we return an empty list.
-        return Collections.emptyList();
+        throw new IllegalStateException("paramNames is not supported for CompositeOperandTypeChecker");
       }
 
       @Override

@@ -12,6 +12,7 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.server.CalciteServerStatement;
 import org.apache.calcite.sql.type.SqlTypeCoercionRule;
+import org.apache.calcite.sql.validate.SqlConformanceEnum;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.implicit.TypeCoercion;
 import org.apache.calcite.tools.FrameworkConfig;
@@ -34,7 +35,9 @@ public class TypeChecker {
     SqlValidator.Config validatorConfig =
         SqlValidator.Config.DEFAULT
             .withTypeCoercionRules(getTypeCoercionRule())
-            .withTypeCoercionFactory(TypeChecker::createTypeCoercion);
+            .withTypeCoercionFactory(TypeChecker::createTypeCoercion)
+            // TODO: should implement one for Calcite
+            .withConformance(SqlConformanceEnum.LENIENT);
     return new PplValidator(
         PplOpTable.getInstance(),
         catalogReader,
