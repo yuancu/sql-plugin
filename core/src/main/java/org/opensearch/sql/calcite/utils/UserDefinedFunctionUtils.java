@@ -6,7 +6,6 @@
 package org.opensearch.sql.calcite.utils;
 
 import static org.apache.calcite.sql.type.SqlTypeUtil.createArrayType;
-import static org.apache.calcite.sql.type.SqlTypeUtil.createMapType;
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.*;
 import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.ExprUDT.*;
 
@@ -57,24 +56,35 @@ public class UserDefinedFunctionUtils {
   public static final RelDataType NULLABLE_STRING =
       TYPE_FACTORY.createTypeWithNullability(TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR), true);
   public static final RelDataType NULLABLE_IP_UDT = TYPE_FACTORY.createUDT(EXPR_IP, true);
-
-  public static RelDataType nullablePatternAggList =
-      createArrayType(
-          TYPE_FACTORY,
-          TYPE_FACTORY.createMapType(
-              TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
-              TYPE_FACTORY.createSqlType(SqlTypeName.ANY)),
-          true);
-  public static RelDataType patternStruct =
-      createMapType(
-          TYPE_FACTORY,
-          TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
-          TYPE_FACTORY.createSqlType(SqlTypeName.ANY),
-          false);
   public static RelDataType tokensMap =
       TYPE_FACTORY.createMapType(
           TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
           createArrayType(TYPE_FACTORY, TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR), false));
+  public static RelDataType patternElementStruct =
+      TYPE_FACTORY.createStructType(
+          List.of(
+              TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
+              TYPE_FACTORY.createSqlType(SqlTypeName.BIGINT),
+              tokensMap,
+              createArrayType(
+                  TYPE_FACTORY,
+                  TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
+                  false),
+              TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR)),
+          List.of("pattern", "pattern_count", "tokens", "sample_logs", "patterns_field"));
+  public static RelDataType nullablePatternAggList =
+      createArrayType(TYPE_FACTORY, patternElementStruct, true);
+  public static RelDataType patternStruct =
+      TYPE_FACTORY.createStructType(
+          List.of(
+              TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR), // pattern
+              TYPE_FACTORY.createSqlType(SqlTypeName.BIGINT), // pattern_count
+              tokensMap, // tokens
+              createArrayType(
+                  TYPE_FACTORY,
+                  TYPE_FACTORY.createSqlType(SqlTypeName.VARCHAR),
+                  false)), // sample_logs),
+          List.of("pattern", "pattern_count", "tokens", "sample_logs"));
   public static Set<String> SINGLE_FIELD_RELEVANCE_FUNCTION_SET =
       ImmutableSet.of("match", "match_phrase", "match_bool_prefix", "match_phrase_prefix");
   public static Set<String> MULTI_FIELDS_RELEVANCE_FUNCTION_SET =
