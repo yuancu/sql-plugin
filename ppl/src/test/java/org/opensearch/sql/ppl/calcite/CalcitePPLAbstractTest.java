@@ -45,8 +45,6 @@ import org.opensearch.sql.ast.statement.Query;
 import org.opensearch.sql.calcite.CalcitePlanContext;
 import org.opensearch.sql.calcite.CalciteRelNodeVisitor;
 import org.opensearch.sql.calcite.SysLimit;
-import org.opensearch.sql.calcite.validate.OpenSearchSparkSqlDialect;
-import org.opensearch.sql.calcite.validate.converters.OpenSearchRelToSqlConverter;
 import org.opensearch.sql.common.setting.Settings;
 import org.opensearch.sql.datasource.DataSourceService;
 import org.opensearch.sql.exception.ExpressionEvaluationException;
@@ -66,7 +64,7 @@ public class CalcitePPLAbstractTest {
     this.config = config(schemaSpecs);
     this.dataSourceService = mock(DataSourceService.class);
     this.planTransformer = new CalciteRelNodeVisitor(dataSourceService);
-    this.converter = new OpenSearchRelToSqlConverter(OpenSearchSparkSqlDialect.DEFAULT);
+    this.converter = new RelToSqlConverter(OpenSearchSparkSqlDialect.DEFAULT);
     this.settings = mock(Settings.class);
   }
 

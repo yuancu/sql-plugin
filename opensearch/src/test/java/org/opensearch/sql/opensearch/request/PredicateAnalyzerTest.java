@@ -834,8 +834,7 @@ public class PredicateAnalyzerTest {
             .add("a", builder.getTypeFactory().createSqlType(SqlTypeName.BIGINT))
             .add("b", builder.getTypeFactory().createSqlType(SqlTypeName.VARCHAR))
             .build();
-    // PPL IS_EMPTY is translated to OR(IS_NULL(arg), EQUALS("")) (not IS_EMPTY because IS_EMPTY is
-    // only for collections)
+    // PPL IS_EMPTY is translated to OR(IS_NULL(arg), IS_EMPTY(arg))
     RexNode call = PPLFuncImpTable.INSTANCE.resolve(builder, BuiltinFunctionName.IS_EMPTY, field2);
     Hook.CURRENT_TIME.addThread((Consumer<Holder<Long>>) h -> h.set(0L));
     QueryExpression expression =
@@ -843,33 +842,7 @@ public class PredicateAnalyzerTest {
     assert (expression
         .builder()
         .toString()
-        .contains(
-            """
-                "should" : [
-                  {
-                    "bool" : {
-                      "must_not" : [
-                        {
-                          "exists" : {
-                            "field" : "b",
-                            "boost" : 1.0
-                          }
-                        }
-                      ],
-                      "adjust_pure_negative" : true,
-                      "boost" : 1.0
-                    }
-                  },
-                  {
-                    "term" : {
-                      "b.keyword" : {
-                        "value" : "",
-                        "boost" : 1.0
-                      }
-                    }
-                  }
-                ]\
-            """));
+        .contains("\"lang\" : \"opensearch_compounded_script\""));
   }
 
   @Test

@@ -38,12 +38,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import lombok.Getter;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.opensearch.sql.calcite.type.AbstractExprRelDataType;
 import org.opensearch.sql.calcite.type.ExprBinaryType;
@@ -53,6 +55,7 @@ import org.opensearch.sql.calcite.type.ExprTimeStampType;
 import org.opensearch.sql.calcite.type.ExprTimeType;
 import org.opensearch.sql.data.model.ExprValue;
 import org.opensearch.sql.data.model.ExprValueUtils;
+import org.opensearch.sql.calcite.validate.PplTypeCoercionRule;
 import org.opensearch.sql.data.type.ExprCoreType;
 import org.opensearch.sql.data.type.ExprType;
 import org.opensearch.sql.executor.OpenSearchTypeSystem;
@@ -328,6 +331,74 @@ public class OpenSearchTypeFactory extends JavaTypeFactoryImpl {
       return exprRelDataType.getJavaType();
     }
     return super.getJavaClass(type);
+  }
+
+  @Override
+  public @Nullable RelDataType leastRestrictive(List<RelDataType> types) {
+    // Handle UDTs separately, otherwise the least restrictive type will become VARCHAR
+    if (types.stream().anyMatch(OpenSearchTypeUtil::isUserDefinedType)
+        && types.stream().allMatch(Objects::nonNull)) {
+      int nullCount = 0;
+      int anyCount = 0;
+      int nullableCount = 0;
+      int dateCount = 0;
+      int timeCount = 0;
+      int ipCount = 0;
+      int binaryCount = 0;
+      int otherCount = 0;
+      for (RelDataType t : types) {
+        if (t.isNullable()) {
+          nullableCount++;
+        }
+        if (t.getSqlTypeName() == SqlTypeName.NULL) {
+          nullCount++;
+        } else if (t.getSqlTypeName() == SqlTypeName.ANY) {
+          anyCount++;
+        }
+        if (t.getSqlTypeName() == SqlTypeName.OTHER) {
+          otherCount++;
+        }
+        if (OpenSearchTypeUtil.isDate(t)) {
+          dateCount++;
+        } else if (OpenSearchTypeUtil.isTime(t)) {
+          timeCount++;
+        } else if (OpenSearchTypeUtil.isIp(t)) {
+          ipCount++;
+        } else if (OpenSearchTypeUtil.isBinary(t)) {
+          binaryCount++;
+        }
+      }
+      // When there is ANY, fall through to standard leastRestrictive
+      if (anyCount == 0) {
+        RelDataType udt;
+        boolean nullable = nullableCount > 0 || nullCount > 0;
+        if (dateCount + nullCount == types.size()) {
+          udt = createUDT(ExprUDT.EXPR_DATE, nullable);
+        } else if (timeCount + nullCount == types.size()) {
+          udt = createUDT(ExprUDT.EXPR_TIME, nullable);
+        }
+        // There are cases where UDT IP interleaves with its intermediate SQL type for validation
+        // OTHER, we check otherCount to patch such cases
+        else if (ipCount + nullCount == types.size() || otherCount + nullCount == types.size()) {
+          udt = createUDT(ExprUDT.EXPR_IP, nullable);
+        } else if (binaryCount + nullCount == types.size()) {
+          udt = createUDT(ExprUDT.EXPR_BINARY, nullable);
+        }
+        // There exists a mix of time, date, and timestamp (and optionally null)
+        else if (binaryCount == 0 && ipCount == 0) {
+          udt = createUDT(ExprUDT.EXPR_TIMESTAMP, nullable);
+        } else {
+          udt = createSqlType(SqlTypeName.VARCHAR, nullable);
+        }
+        return udt;
+      }
+    }
+    RelDataType type = leastRestrictive(types, PplTypeCoercionRule.assignmentInstance());
+    // Convert CHAR(precision) to VARCHAR so that results won't be padded
+    if (type != null && SqlTypeName.CHAR.equals(type.getSqlTypeName())) {
+      return createSqlType(SqlTypeName.VARCHAR, type.isNullable());
+    }
+    return type;
   }
 
   /**
