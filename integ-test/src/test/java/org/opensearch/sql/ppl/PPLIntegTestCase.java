@@ -28,6 +28,7 @@ import org.opensearch.client.ResponseException;
 import org.opensearch.common.collect.MapBuilder;
 import org.opensearch.sql.ast.statement.ExplainMode;
 import org.opensearch.sql.common.setting.Settings;
+import org.opensearch.sql.util.MatcherUtils;
 import org.opensearch.sql.common.setting.Settings.Key;
 import org.opensearch.sql.legacy.SQLIntegTestCase;
 import org.opensearch.sql.protocol.response.format.Format;
@@ -419,6 +420,17 @@ public abstract class PPLIntegTestCase extends SQLIntegTestCase {
       }
     } else {
       prefix = "expectedOutput/ppl/";
+    }
+    // Track the source file path for YAML regeneration
+    if ("true".equals(System.getenv("REGENERATE_YAML"))
+        || Boolean.getBoolean("REGENERATE_YAML")) {
+      // Resolve the source file path (not the build copy) using project.root
+      String projectRoot = System.getProperty("project.root", "");
+      if (!projectRoot.isEmpty()) {
+        String sourcePath =
+            projectRoot + "/src/test/resources/" + prefix + fileName;
+        MatcherUtils.setLastExpectedFilePath(sourcePath);
+      }
     }
     return loadFromFile(prefix + fileName);
   }

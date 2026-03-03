@@ -3,7 +3,7 @@ calcite:
     LogicalSystemLimit(fetch=[10000], type=[QUERY_SIZE_LIMIT])
       LogicalProject(count()=[$1], span(age,10)=[$0])
         LogicalAggregate(group=[{0}], count()=[COUNT()])
-          LogicalProject(span(age,10)=[SPAN($10, 10, null:ANY)])
+          LogicalProject(span(age,10)=[SPAN($10, 10, null:NULL)])
             LogicalFilter(condition=[IS NOT NULL($10)])
               CalciteLogicalIndexScan(table=[[OpenSearch, opensearch-sql_test_index_bank]])
   physical: |

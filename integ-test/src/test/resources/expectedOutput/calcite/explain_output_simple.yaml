@@ -5,9 +5,10 @@ calcite:
         LogicalFilter
           LogicalProject
             LogicalFilter
-              LogicalSort
-                LogicalProject
-                  LogicalAggregate
-                    LogicalProject
-                      LogicalFilter
-                        CalciteLogicalIndexScan
+              LogicalProject
+                LogicalSort
+                  LogicalProject
+                    LogicalAggregate
+                      LogicalProject
+                        LogicalFilter
+                          CalciteLogicalIndexScan

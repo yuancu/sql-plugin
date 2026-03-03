@@ -372,6 +372,11 @@ task integJdbcTest(type: RestIntegTestTask) {
         systemProperty "jdbcFile", System.getProperty("jdbcFile")
     }
 
+    // Pass through REGENERATE_YAML for expected output regeneration
+    if (System.getProperty("REGENERATE_YAML") != null) {
+        systemProperty "REGENERATE_YAML", System.getProperty("REGENERATE_YAML")
+    }
+
     systemProperty 'tests.security.manager', 'false'
     systemProperty('project.root', project.projectDir.absolutePath)
 

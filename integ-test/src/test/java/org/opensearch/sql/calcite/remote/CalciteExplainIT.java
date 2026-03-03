@@ -478,42 +478,42 @@ public class CalciteExplainIT extends ExplainIT {
 
   @Test
   public void testExplainTimechartPerSecond() throws IOException {
-    var result = explainQueryYaml("source=events | timechart span=2m per_second(cpu_usage)");
+    var result = explainQueryToString("source=events | timechart span=2m per_second(cpu_usage)");
     assertTrue(
         result.contains(
-            "per_second(cpu_usage)=[DIVIDE(*($1, 1000.0E0), TIMESTAMPDIFF('MILLISECOND', $0,"
-                + " TIMESTAMPADD('MINUTE', 2, $0)))]"));
-    assertTrue(result.contains("per_second(cpu_usage)=[SUM($1)]"));
+            "per_second(cpu_usage)=[DIVIDE(*($1, 1000.0E0), TIMESTAMPDIFF('MILLISECOND':VARCHAR,"
+                + " $0, TIMESTAMPADD('MINUTE':VARCHAR, 2, $0)))]"));
+    assertTrue(result.contains("per_second(cpu_usage)=[SUM($0)]"));
   }
 
   @Test
   public void testExplainTimechartPerMinute() throws IOException {
-    var result = explainQueryYaml("source=events | timechart span=2m per_minute(cpu_usage)");
+    var result = explainQueryToString("source=events | timechart span=2m per_minute(cpu_usage)");
     assertTrue(
         result.contains(
-            "per_minute(cpu_usage)=[DIVIDE(*($1, 60000.0E0), TIMESTAMPDIFF('MILLISECOND', $0,"
-                + " TIMESTAMPADD('MINUTE', 2, $0)))]"));
-    assertTrue(result.contains("per_minute(cpu_usage)=[SUM($1)]"));
+            "per_minute(cpu_usage)=[DIVIDE(*($1, 60000.0E0), TIMESTAMPDIFF('MILLISECOND':VARCHAR,"
+                + " $0, TIMESTAMPADD('MINUTE':VARCHAR, 2, $0)))]"));
+    assertTrue(result.contains("per_minute(cpu_usage)=[SUM($0)]"));
   }
 
   @Test
   public void testExplainTimechartPerHour() throws IOException {
-    var result = explainQueryYaml("source=events | timechart span=2m per_hour(cpu_usage)");
+    var result = explainQueryToString("source=events | timechart span=2m per_hour(cpu_usage)");
     assertTrue(
         result.contains(
-            "per_hour(cpu_usage)=[DIVIDE(*($1, 3600000.0E0), TIMESTAMPDIFF('MILLISECOND', $0,"
-                + " TIMESTAMPADD('MINUTE', 2, $0)))]"));
-    assertTrue(result.contains("per_hour(cpu_usage)=[SUM($1)]"));
+            "per_hour(cpu_usage)=[DIVIDE(*($1, 3600000.0E0), TIMESTAMPDIFF('MILLISECOND':VARCHAR,"
+                + " $0, TIMESTAMPADD('MINUTE':VARCHAR, 2, $0)))]"));
+    assertTrue(result.contains("per_hour(cpu_usage)=[SUM($0)]"));
   }
 
   @Test
   public void testExplainTimechartPerDay() throws IOException {
-    var result = explainQueryYaml("source=events | timechart span=2m per_day(cpu_usage)");
+    var result = explainQueryToString("source=events | timechart span=2m per_day(cpu_usage)");
     assertTrue(
         result.contains(
-            "per_day(cpu_usage)=[DIVIDE(*($1, 8.64E7), TIMESTAMPDIFF('MILLISECOND', $0,"
-                + " TIMESTAMPADD('MINUTE', 2, $0)))]"));
-    assertTrue(result.contains("per_day(cpu_usage)=[SUM($1)]"));
+            "per_day(cpu_usage)=[DIVIDE(*($1, 8.64E7), TIMESTAMPDIFF('MILLISECOND':VARCHAR, $0,"
+                + " TIMESTAMPADD('MINUTE':VARCHAR, 2, $0)))]"));
+    assertTrue(result.contains("per_day(cpu_usage)=[SUM($0)]"));
   }
 
   @Test
@@ -787,7 +787,7 @@ public class CalciteExplainIT extends ExplainIT {
     String query =
         String.format("source=%s | where regexp_match(name, 'hello')", TEST_INDEX_STRINGS);
     var result = explainQueryYaml(query);
-    String expected = loadFromFile("expectedOutput/calcite/explain_regexp_match_in_where.yaml");
+    String expected = loadExpectedPlan("explain_regexp_match_in_where.yaml");
     assertYamlEqualsIgnoreId(expected, result);
   }
 

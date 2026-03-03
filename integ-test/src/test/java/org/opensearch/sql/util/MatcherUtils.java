@@ -21,7 +21,10 @@ import static org.junit.Assert.assertEquals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.gson.JsonParser;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,6 +47,15 @@ public class MatcherUtils {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+  private static final ThreadLocal<String> LAST_EXPECTED_FILE_PATH = new ThreadLocal<>();
+
+  /**
+   * Set the file path of the last loaded expected YAML (used for YAML regeneration). When
+   * REGENERATE_YAML=true env var is set, the actual YAML output will be written to this path.
+   */
+  public static void setLastExpectedFilePath(String path) {
+    LAST_EXPECTED_FILE_PATH.set(path);
+  }
 
   /**
    * Assert field value in object by a custom matcher and getter to access the field.
@@ -406,6 +418,22 @@ public class MatcherUtils {
    * @param actual actual JSON string.
    */
   public static void assertJsonEquals(String expected, String actual) {
+    if ("true".equals(System.getenv("REGENERATE_YAML"))
+        || Boolean.getBoolean("REGENERATE_YAML")) {
+      String filePath = LAST_EXPECTED_FILE_PATH.get();
+      if (filePath != null
+          && !JsonParser.parseString(eliminatePid(expected))
+              .equals(JsonParser.parseString(eliminatePid(actual)))) {
+        try {
+          Files.writeString(Path.of(filePath), actual);
+          LOG.info("Regenerated JSON: {}", filePath);
+        } catch (IOException e) {
+          LOG.warn("Failed to regenerate JSON: {}", filePath, e);
+        }
+      }
+      LAST_EXPECTED_FILE_PATH.remove();
+      return;
+    }
     assertEquals(
         JsonParser.parseString(eliminatePid(expected)),
         JsonParser.parseString(eliminatePid(actual)));
@@ -503,6 +531,20 @@ public class MatcherUtils {
   public static void assertYamlEquals(String expected, String actual) {
     String normalizedExpected = normalizeLineBreaks(expected).trim();
     String normalizedActual = normalizeLineBreaks(actual).trim();
+    if ("true".equals(System.getenv("REGENERATE_YAML"))
+        || Boolean.getBoolean("REGENERATE_YAML")) {
+      String filePath = LAST_EXPECTED_FILE_PATH.get();
+      if (filePath != null && !normalizedExpected.equals(normalizedActual)) {
+        try {
+          Files.writeString(Path.of(filePath), actual);
+          LOG.info("Regenerated YAML: {}", filePath);
+        } catch (IOException e) {
+          LOG.warn("Failed to regenerate YAML: {}", filePath, e);
+        }
+      }
+      LAST_EXPECTED_FILE_PATH.remove();
+      return; // Skip assertion when regenerating
+    }
     assertEquals(
         formatMessage(normalizedExpected, normalizedActual), normalizedExpected, normalizedActual);
   }

@@ -466,16 +466,15 @@ public class CalcitePPLBasicIT extends PPLIntegTestCase {
 
   @Test
   public void testBetweenWithIncompatibleTypes() throws IOException {
-    // Plan: SAFE_CAST(NUMBER_TO_STRING(38.5:DECIMAL(3, 1))). The least restrictive type between
-    // int, decimal, and varchar is resolved to varchar. between '35' and '38.5' is then optimized
-    // to empty rows
+    // With the branch's leastRestrictive() override, mixed numeric/varchar types are resolved
+    // to a common numeric type, so the comparison works correctly: age between 35 and 38.5
     JSONObject actual =
         executeQuery(
             String.format(
                 "source=%s | where age between '35' and 38.5 | fields firstname, age",
                 TEST_INDEX_BANK));
     verifySchema(actual, schema("firstname", "string"), schema("age", "int"));
-    verifyNumOfRows(actual, 0);
+    verifyDataRows(actual, rows("Hattie", 36), rows("Elinor", 36));
   }
 
   @Test
