@@ -209,13 +209,14 @@ public class OpenSearchTypeFactoryTest {
   }
 
   @Test
-  public void testLeastRestrictive_charType_convertsToVarchar() {
+  public void testLeastRestrictive_charType_preservesCharWhenHomogeneous() {
     RelDataType charType = TYPE_FACTORY.createSqlType(SqlTypeName.CHAR, 10);
 
     RelDataType result = TYPE_FACTORY.leastRestrictive(List.of(charType));
 
     assertNotNull(result);
-    assertEquals(SqlTypeName.VARCHAR, result.getSqlTypeName());
+    // When all inputs are CHAR, preserve CHAR to avoid type mismatches during planner equivalence
+    assertEquals(SqlTypeName.CHAR, result.getSqlTypeName());
   }
 
   @Test

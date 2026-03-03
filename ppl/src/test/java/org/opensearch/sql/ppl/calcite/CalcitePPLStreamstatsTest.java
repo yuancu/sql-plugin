@@ -117,14 +117,14 @@ public class CalcitePPLStreamstatsTest extends CalcitePPLAbstractTest {
             + " `$cor0`.`SAL`, `$cor0`.`COMM`, `$cor0`.`DEPTNO`, `t3`.`max(SAL)`\n"
             + "FROM (SELECT `EMPNO`, `ENAME`, `JOB`, `MGR`, `HIREDATE`, `SAL`, `COMM`, `DEPTNO`,"
             + " ROW_NUMBER() OVER () `__stream_seq__`\n"
-            + "FROM `scott`.`EMP`) `$cor0`,\n"
-            + "LATERAL (SELECT MAX(`SAL`) `max(SAL)`\n"
+            + "FROM `scott`.`EMP`) `$cor0`\n"
+            + "LEFT JOIN LATERAL (SELECT MAX(`SAL`) `max(SAL)`\n"
             + "FROM (SELECT `EMPNO`, `ENAME`, `JOB`, `MGR`, `HIREDATE`, `SAL`, `COMM`, `DEPTNO`,"
             + " ROW_NUMBER() OVER () `__stream_seq__`\n"
             + "FROM `scott`.`EMP`) `t0`\n"
             + "WHERE `__stream_seq__` >= `$cor0`.`__stream_seq__` - 4 AND `__stream_seq__` <="
             + " `$cor0`.`__stream_seq__` AND (`DEPTNO` = `$cor0`.`DEPTNO` OR `DEPTNO` IS NULL AND"
-            + " `$cor0`.`DEPTNO` IS NULL)) `t3`\n"
+            + " `$cor0`.`DEPTNO` IS NULL)) `t3` ON TRUE\n"
             + "ORDER BY `$cor0`.`__stream_seq__` NULLS LAST";
     verifyPPLToSparkSQL(root, expectedSparkSql);
   }
@@ -204,8 +204,8 @@ public class CalcitePPLStreamstatsTest extends CalcitePPLAbstractTest {
             + " ROW_NUMBER() OVER () `__stream_seq__`, CASE WHEN `SAL` > 100 THEN 1 ELSE 0 END"
             + " `__reset_before_flag__`, CASE WHEN `SAL` < 50 THEN 1 ELSE 0 END"
             + " `__reset_after_flag__`\n"
-            + "FROM `scott`.`EMP`) `t`) `$cor0`,\n"
-            + "LATERAL (SELECT AVG(`SAL`) `avg(SAL)`\n"
+            + "FROM `scott`.`EMP`) `t`) `$cor0`\n"
+            + "LEFT JOIN LATERAL (SELECT AVG(`SAL`) `avg(SAL)`\n"
             + "FROM (SELECT `EMPNO`, `ENAME`, `JOB`, `MGR`, `HIREDATE`, `SAL`, `COMM`, `DEPTNO`,"
             + " `__stream_seq__`, `__reset_before_flag__`, `__reset_after_flag__`,"
             + " (SUM(`__reset_before_flag__`) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT"
@@ -218,7 +218,7 @@ public class CalcitePPLStreamstatsTest extends CalcitePPLAbstractTest {
             + "FROM `scott`.`EMP`) `t1`) `t2`\n"
             + "WHERE `__stream_seq__` <= `$cor0`.`__stream_seq__` AND `__seg_id__` ="
             + " `$cor0`.`__seg_id__` AND (`DEPTNO` = `$cor0`.`DEPTNO` OR `DEPTNO` IS NULL AND"
-            + " `$cor0`.`DEPTNO` IS NULL)) `t5`\n"
+            + " `$cor0`.`DEPTNO` IS NULL)) `t5` ON TRUE\n"
             + "ORDER BY `$cor0`.`__stream_seq__` NULLS LAST";
     verifyPPLToSparkSQL(root, expectedSparkSql);
   }

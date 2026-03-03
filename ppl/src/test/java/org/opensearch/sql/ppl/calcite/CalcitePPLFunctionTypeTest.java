@@ -80,10 +80,9 @@ public class CalcitePPLFunctionTypeTest extends CalcitePPLAbstractTest {
     verifyQueryThrowsException(
         "source=EMP | eval if_name = if(EMPNO, 1, DEPTNO) | fields if_name",
         "IF function expects {[BOOLEAN,ANY,ANY]}, but got [SHORT,INTEGER,BYTE]");
-    verifyQueryThrowsException(
-        "source=EMP | eval if_name = if(EMPNO > 6, 'Jack', 1) | fields if_name",
-        "Cannot resolve function: IF, arguments: [BOOLEAN,STRING,INTEGER], caused by: Can't find"
-            + " leastRestrictive type for [VARCHAR, INTEGER]");
+    // With the branch's leastRestrictive() override, VARCHAR-INTEGER coercion is supported
+    // so if(EMPNO > 6, 'Jack', 1) resolves successfully with VARCHAR as the common type
+    getRelNode("source=EMP | eval if_name = if(EMPNO > 6, 'Jack', 1) | fields if_name");
   }
 
   @Test

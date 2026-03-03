@@ -26,8 +26,8 @@ import org.apache.calcite.plan.hep.HepPlanner;
 import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
 import org.apache.calcite.rel.rel2sql.SqlImplementor;
+import org.opensearch.sql.calcite.validate.converters.OpenSearchRelToSqlConverter;
 import org.apache.calcite.rel.rules.FilterMergeRule;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlNode;
@@ -47,6 +47,7 @@ import org.opensearch.sql.calcite.CalciteRelNodeVisitor;
 import org.opensearch.sql.calcite.SysLimit;
 import org.opensearch.sql.common.setting.Settings;
 import org.opensearch.sql.datasource.DataSourceService;
+import org.opensearch.sql.calcite.validate.OpenSearchSparkSqlDialect;
 import org.opensearch.sql.exception.ExpressionEvaluationException;
 import org.opensearch.sql.ppl.antlr.PPLSyntaxParser;
 import org.opensearch.sql.ppl.parser.AstBuilder;
@@ -55,7 +56,7 @@ import org.opensearch.sql.ppl.parser.AstStatementBuilder;
 public class CalcitePPLAbstractTest {
   @Getter private final Frameworks.ConfigBuilder config;
   private final CalciteRelNodeVisitor planTransformer;
-  private final RelToSqlConverter converter;
+  private final OpenSearchRelToSqlConverter converter;
   protected final Settings settings;
   private final DataSourceService dataSourceService;
   public PPLSyntaxParser pplParser = new PPLSyntaxParser();
@@ -64,7 +65,7 @@ public class CalcitePPLAbstractTest {
     this.config = config(schemaSpecs);
     this.dataSourceService = mock(DataSourceService.class);
     this.planTransformer = new CalciteRelNodeVisitor(dataSourceService);
-    this.converter = new RelToSqlConverter(OpenSearchSparkSqlDialect.DEFAULT);
+    this.converter = new OpenSearchRelToSqlConverter(OpenSearchSparkSqlDialect.DEFAULT);
     this.settings = mock(Settings.class);
   }
 

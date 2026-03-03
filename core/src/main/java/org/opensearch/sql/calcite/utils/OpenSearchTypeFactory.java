@@ -394,8 +394,11 @@ public class OpenSearchTypeFactory extends JavaTypeFactoryImpl {
       }
     }
     RelDataType type = leastRestrictive(types, PplTypeCoercionRule.assignmentInstance());
-    // Convert CHAR(precision) to VARCHAR so that results won't be padded
-    if (type != null && SqlTypeName.CHAR.equals(type.getSqlTypeName())) {
+    // Convert CHAR(precision) to VARCHAR so that results won't be padded,
+    // but only when resolving mixed types. When all inputs are the same CHAR type,
+    // preserve it to avoid type mismatches during planner equivalence checks.
+    if (type != null && SqlTypeName.CHAR.equals(type.getSqlTypeName())
+        && !types.stream().allMatch(t -> SqlTypeName.CHAR.equals(t.getSqlTypeName()))) {
       return createSqlType(SqlTypeName.VARCHAR, type.isNullable());
     }
     return type;
