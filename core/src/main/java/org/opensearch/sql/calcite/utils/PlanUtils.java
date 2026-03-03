@@ -10,6 +10,7 @@ import static org.apache.calcite.rex.RexWindowBounds.UNBOUNDED_FOLLOWING;
 import static org.apache.calcite.rex.RexWindowBounds.UNBOUNDED_PRECEDING;
 import static org.apache.calcite.rex.RexWindowBounds.following;
 import static org.apache.calcite.rex.RexWindowBounds.preceding;
+import static org.opensearch.sql.calcite.utils.OpenSearchTypeFactory.isTimeBasedType;
 
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Method;
@@ -646,7 +647,7 @@ public interface PlanUtils {
           agg.getGroupSet().stream()
               .allMatch(
                   group ->
-                      OpenSearchTypeUtil.isDatetime(
+                      isTimeBasedType(
                           agg.getInput().getRowType().getFieldList().get(group).getType()));
 
   static boolean isTimeSpan(RexNode rex) {

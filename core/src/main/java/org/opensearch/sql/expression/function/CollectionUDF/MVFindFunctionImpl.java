@@ -20,7 +20,6 @@ import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeFamily;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.expression.function.ImplementorUDF;
 import org.opensearch.sql.expression.function.UDFOperandMetadata;
 
@@ -46,7 +45,7 @@ public class MVFindFunctionImpl extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     // Accept ARRAY and STRING for the regex pattern
     return UDFOperandMetadata.wrap(
         OperandTypes.family(SqlTypeFamily.ARRAY, SqlTypeFamily.CHARACTER));

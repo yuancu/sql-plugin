@@ -25,7 +25,6 @@ import org.apache.calcite.sql.type.CompositeOperandTypeChecker;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeFamily;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.OpenSearchTypeFactory;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.calcite.utils.datetime.DateTimeConversionUtils;
@@ -74,7 +73,7 @@ public class AddSubDateFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     return UDFOperandMetadata.wrap(
         (CompositeOperandTypeChecker)
             OperandTypes.DATETIME_INTERVAL.or(

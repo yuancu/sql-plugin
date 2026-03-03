@@ -18,7 +18,6 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.CompositeOperandTypeChecker;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.PPLOperandTypes;
 import org.opensearch.sql.expression.function.ImplementorUDF;
 import org.opensearch.sql.expression.function.UDFOperandMetadata;
@@ -37,7 +36,7 @@ public final class RexExtractFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     // Support both (field, pattern, groupIndex) and (field, pattern, groupName)
     return UDFOperandMetadata.wrap(
         (CompositeOperandTypeChecker)

@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlOperator;
@@ -38,14 +37,6 @@ public class PplConvertletTable extends ReflectiveConvertletTable {
     registerOperator(SqlStdOperatorTable.LESS_THAN, ipConvertlet(PPLBuiltinOperators.LESS_IP));
     registerOperator(
         SqlStdOperatorTable.LESS_THAN_OR_EQUAL, ipConvertlet(PPLBuiltinOperators.LTE_IP));
-    // There is no implementation for PPLBuiltinOperators.ATAN. It needs to be replaced to
-    // SqlStdOperatorTable.ATAN when converted to RelNode
-    registerOperator(
-        PPLBuiltinOperators.ATAN,
-        (cx, call) -> {
-          ((SqlBasicCall) call).setOperator(SqlStdOperatorTable.ATAN);
-          return StandardConvertletTable.INSTANCE.convertCall(cx, call);
-        });
   }
 
   @Override
@@ -61,13 +52,13 @@ public class PplConvertletTable extends ReflectiveConvertletTable {
     map.put(op, convertlet);
   }
 
-  private SqlRexConvertlet ipConvertlet(SqlFunction substitute) {
+  private SqlRexConvertlet ipConvertlet(SqlOperator substitute) {
     return (cx, call) -> {
       final RexCall e = (RexCall) StandardConvertletTable.INSTANCE.convertCall(cx, call);
       RelDataType type1 = e.getOperands().get(0).getType();
       RelDataType type2 = e.getOperands().get(1).getType();
       if (OpenSearchTypeUtil.isIp(type1) || OpenSearchTypeUtil.isIp(type2)) {
-        return StandardConvertletTable.INSTANCE.convertFunction(cx, substitute, call);
+        return StandardConvertletTable.INSTANCE.convertFunction(cx, (SqlFunction) substitute, call);
       }
       return e;
     };

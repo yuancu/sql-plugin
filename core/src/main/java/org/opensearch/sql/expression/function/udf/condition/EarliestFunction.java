@@ -22,7 +22,6 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.PPLOperandTypes;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.data.model.ExprValue;
@@ -41,7 +40,7 @@ public class EarliestFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     return PPLOperandTypes.STRING_TIMESTAMP;
   }
 

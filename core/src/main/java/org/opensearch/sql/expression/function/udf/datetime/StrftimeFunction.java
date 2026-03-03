@@ -18,7 +18,6 @@ import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.*;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.data.model.ExprDateValue;
 import org.opensearch.sql.data.model.ExprDoubleValue;
 import org.opensearch.sql.data.model.ExprFloatValue;
@@ -54,7 +53,7 @@ public class StrftimeFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     // Accepts (NUMERIC|TIMESTAMP, STRING) -> STRING
     // Note: STRING is NOT accepted for first parameter - use unix_timestamp() to convert
     // Calcite will auto-cast DATE and TIME to TIMESTAMP

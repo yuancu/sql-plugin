@@ -13,6 +13,7 @@ import org.apache.calcite.rel.rel2sql.SqlImplementor;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.test.CalciteAssert;
 import org.junit.Test;
+import org.opensearch.sql.calcite.validate.OpenSearchSparkSqlDialect;
 
 public class CalcitePPLNoMvTest extends CalcitePPLAbstractTest {
 

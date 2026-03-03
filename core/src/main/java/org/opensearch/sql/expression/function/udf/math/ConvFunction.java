@@ -16,7 +16,6 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeFamily;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.PPLOperandTypes;
 import org.opensearch.sql.calcite.utils.PPLReturnTypes;
 import org.opensearch.sql.expression.function.ImplementorUDF;
@@ -39,7 +38,7 @@ public class ConvFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     return PPLOperandTypes.STRING_OR_INTEGER_INTEGER_INTEGER;
   }
 

@@ -14,10 +14,8 @@ import org.apache.calcite.adapter.enumerable.RexToLixTranslator;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.data.utils.MixedTypeComparator;
 import org.opensearch.sql.expression.function.ImplementorUDF;
 import org.opensearch.sql.expression.function.UDFOperandMetadata;
@@ -38,8 +36,8 @@ public class ScalarMaxFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
-    return UDFOperandMetadata.wrap(OperandTypes.VARIADIC);
+  public UDFOperandMetadata getOperandMetadata() {
+    return null;
   }
 
   public static class MaxImplementor implements NotNullImplementor {

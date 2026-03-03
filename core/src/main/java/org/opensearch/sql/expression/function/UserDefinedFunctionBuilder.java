@@ -9,13 +9,10 @@ import java.util.Collections;
 import org.apache.calcite.schema.ImplementableFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.InferTypes;
-import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.validate.SqlUserDefinedFunction;
-import org.jspecify.annotations.NonNull;
 
 /**
  * The interface helps to construct a SqlUserDefinedFunction
@@ -25,8 +22,7 @@ import org.jspecify.annotations.NonNull;
  * <p>2. getReturnTypeInference - returns the return type of the UDF
  *
  * <p>3. getOperandMetadata - returns the operand metadata of the UDF. This is for checking the
- * operand when validation, default to VARIADIC (accepts any number of operands without type
- * checking).
+ * operand when validation, default null without checking.
  */
 public interface UserDefinedFunctionBuilder {
 
@@ -34,21 +30,7 @@ public interface UserDefinedFunctionBuilder {
 
   SqlReturnTypeInference getReturnTypeInference();
 
-  /**
-   * Define the operand metadata of the UDF. This is for checking the operand when validation,
-   * default to VARIADIC (accepts any number of operands without type checking).
-   *
-   * @return a {@link UDFOperandMetadata} that defines operand types, typically wrapping a {@link
-   *     org.apache.calcite.sql.type.SqlOperandTypeChecker} to reuse Calcite's type checkers.
-   */
-  default @NonNull UDFOperandMetadata getOperandMetadata() {
-    // Use the most permissive type checker by default, effectively skipping type checking
-    return UDFOperandMetadata.wrap(OperandTypes.VARIADIC);
-  }
-
-  default SqlKind getKind() {
-    return SqlKind.OTHER_FUNCTION;
-  }
+  UDFOperandMetadata getOperandMetadata();
 
   default SqlUserDefinedFunction toUDF(String functionName) {
     return toUDF(functionName, true);
@@ -68,7 +50,7 @@ public interface UserDefinedFunctionBuilder {
         new SqlIdentifier(Collections.singletonList(functionName), null, SqlParserPos.ZERO, null);
     return new SqlUserDefinedFunction(
         udfLtrimIdentifier,
-        getKind(),
+        SqlKind.OTHER_FUNCTION,
         getReturnTypeInference(),
         InferTypes.ANY_NULLABLE,
         getOperandMetadata(),
@@ -83,11 +65,6 @@ public interface UserDefinedFunctionBuilder {
         // to avoid convert to sql dialog as identifier, use keyword instead
         // check the code SqlUtil.unparseFunctionSyntax()
         return null;
-      }
-
-      @Override
-      public SqlOperandCountRange getOperandCountRange() {
-        return getOperandMetadata().getOperandCountRange();
       }
     };
   }

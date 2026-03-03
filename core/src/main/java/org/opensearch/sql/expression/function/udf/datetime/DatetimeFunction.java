@@ -15,7 +15,6 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.CompositeOperandTypeChecker;
 import org.apache.calcite.sql.type.OperandTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.PPLReturnTypes;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.data.model.ExprStringValue;
@@ -47,7 +46,7 @@ public class DatetimeFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     return UDFOperandMetadata.wrap(
         (CompositeOperandTypeChecker)
             OperandTypes.TIMESTAMP_STRING

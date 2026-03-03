@@ -14,7 +14,6 @@ import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
-import org.jspecify.annotations.NonNull;
 import org.opensearch.sql.calcite.utils.PPLOperandTypes;
 import org.opensearch.sql.expression.function.ImplementorUDF;
 import org.opensearch.sql.expression.function.UDFOperandMetadata;
@@ -46,7 +45,7 @@ public class SpanBucketFunction extends ImplementorUDF {
   }
 
   @Override
-  public @NonNull UDFOperandMetadata getOperandMetadata() {
+  public UDFOperandMetadata getOperandMetadata() {
     return PPLOperandTypes.NUMERIC_NUMERIC;
   }
 
