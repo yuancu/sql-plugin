@@ -354,13 +354,8 @@ public class CalcitePPLFunctionTypeTest extends CalcitePPLAbstractTest {
   // mvjoin should reject non-string single values
   @Test
   public void testMvjoinRejectsNonStringValues() {
-    // Mvjoin rejects non-stringValues no longer throws exception, Calcite handles type coercion
-    String ppl = "source=EMP | eval result = mvjoin(42, ',') | fields result | head 1";
-    RelNode root = getRelNode(ppl);
-    verifyLogical(
-        root,
-        "LogicalSort(fetch=[1])\n"
-            + "  LogicalProject(result=[ARRAY_JOIN(42, ',')])\n"
-            + "    LogicalTableScan(table=[[scott, EMP]])\n");
+    verifyQueryThrowsException(
+        "source=EMP | eval result = mvjoin(42, ',') | fields result | head 1",
+        "MVJOIN function expects {[ARRAY,STRING]|[ARRAY,STRING,STRING]}, but got [INTEGER,STRING]");
   }
 }

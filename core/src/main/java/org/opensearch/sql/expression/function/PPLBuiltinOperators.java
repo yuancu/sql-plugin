@@ -51,7 +51,6 @@ import org.opensearch.sql.calcite.utils.PPLReturnTypes;
 import org.opensearch.sql.calcite.utils.UserDefinedFunctionUtils;
 import org.opensearch.sql.data.type.ExprCoreType;
 import org.opensearch.sql.expression.datetime.DateTimeFunctions;
-import org.opensearch.sql.expression.function.CollectionUDF.AppendFunctionImpl;
 import org.opensearch.sql.expression.function.CollectionUDF.ArrayFunctionImpl;
 import org.opensearch.sql.expression.function.CollectionUDF.ExistsFunctionImpl;
 import org.opensearch.sql.expression.function.CollectionUDF.FilterFunctionImpl;
@@ -397,18 +396,17 @@ public class PPLBuiltinOperators extends ReflectiveSqlOperatorTable {
   public static final SqlFunction PATTERN_PARSER =
       new PatternParserFunctionImpl().toUDF("PATTERN_PARSER");
 
-  public static final SqlFunction FORALL = new ForallFunctionImpl().toUDF("forall");
-  public static final SqlFunction EXISTS = new ExistsFunctionImpl().toUDF("exists");
-  public static final SqlFunction ARRAY = new ArrayFunctionImpl().toUDF("array");
-  public static final SqlFunction MAP_APPEND = new MapAppendFunctionImpl().toUDF("map_append");
-  public static final SqlFunction MAP_REMOVE = new MapRemoveFunctionImpl().toUDF("map_remove");
-  public static final SqlFunction MVAPPEND = new MVAppendFunctionImpl().toUDF("mvappend");
-  public static final SqlFunction INTERNAL_APPEND = new AppendFunctionImpl().toUDF("append");
-  public static final SqlFunction MVZIP = new MVZipFunctionImpl().toUDF("mvzip");
-  public static final SqlFunction MVFIND = new MVFindFunctionImpl().toUDF("mvfind");
-  public static final SqlFunction FILTER = new FilterFunctionImpl().toUDF("filter");
-  public static final SqlFunction TRANSFORM = new TransformFunctionImpl().toUDF("transform");
-  public static final SqlFunction REDUCE = new ReduceFunctionImpl().toUDF("reduce");
+  public static final SqlOperator FORALL = new ForallFunctionImpl().toUDF("forall");
+  public static final SqlOperator EXISTS = new ExistsFunctionImpl().toUDF("exists");
+  public static final SqlOperator ARRAY = new ArrayFunctionImpl().toUDF("array");
+  public static final SqlOperator MAP_APPEND = new MapAppendFunctionImpl().toUDF("map_append");
+  public static final SqlOperator MAP_REMOVE = new MapRemoveFunctionImpl().toUDF("MAP_REMOVE");
+  public static final SqlOperator MVAPPEND = new MVAppendFunctionImpl().toUDF("mvappend");
+  public static final SqlOperator MVZIP = new MVZipFunctionImpl().toUDF("mvzip");
+  public static final SqlOperator MVFIND = new MVFindFunctionImpl().toUDF("mvfind");
+  public static final SqlOperator FILTER = new FilterFunctionImpl().toUDF("filter");
+  public static final SqlOperator TRANSFORM = new TransformFunctionImpl().toUDF("transform");
+  public static final SqlOperator REDUCE = new ReduceFunctionImpl().toUDF("reduce");
 
   private static final RelevanceQueryFunction RELEVANCE_QUERY_FUNCTION_INSTANCE =
       new RelevanceQueryFunction();
